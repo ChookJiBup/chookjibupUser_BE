@@ -6,9 +6,15 @@ package com.example.chookjibupuser.global.response;
 public enum SuccessCode {
     OK(20000, "요청이 성공적으로 처리되었습니다."),
     USER_KAKAO_LOGIN_SUCCESS(21000, "카카오 로그인에 성공했습니다."),
+    AUTH_EMAIL_VERIFICATION_CODE_SENT(21001, "인증번호를 전송했습니다."),
+    AUTH_EMAIL_VERIFICATION_SUCCESS(21002, "이메일 인증이 완료되었습니다."),
+    USER_EMAIL_SIGNUP_SUCCESS(21003, "회원가입이 완료되었습니다."),
+    USER_EMAIL_LOGIN_SUCCESS(21004, "로그인에 성공했습니다."),
     FESTIVAL_LIST_READ_SUCCESS(22000, "축제 목록 조회가 완료되었습니다."),
     WISHLIST_TOGGLE_SUCCESS(23000, "찜 상태가 변경되었습니다."),
-    WISHLIST_READ_SUCCESS(23002, "찜한 축제 목록 조회가 완료되었습니다.");
+    WISHLIST_READ_SUCCESS(23002, "찜한 축제 목록 조회가 완료되었습니다."),
+    REVIEW_CREATE_SUCCESS(24000, "리뷰가 등록되었습니다."),
+    REVIEW_READ_SUCCESS(24001, "리뷰 목록 조회가 완료되었습니다.");
 
     private final int code;
     private final String message;

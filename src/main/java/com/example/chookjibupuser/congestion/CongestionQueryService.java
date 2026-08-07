@@ -2,13 +2,14 @@ package com.example.chookjibupuser.congestion;
 
 import com.example.chookjibupuser.congestion.dto.BoothCongestionView;
 import com.example.chookjibupuser.congestion.dto.FestivalCongestionView;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 축제/부스 혼잡도 조회를 처리한다. congestion 도메인 자신의 저장소만 다룬다 —

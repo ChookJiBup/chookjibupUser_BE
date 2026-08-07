@@ -1,15 +1,11 @@
 package com.example.chookjibupuser.wishlist;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.OffsetDateTime;
 
 /**
  * 사용자가 축제를 찜한 기록. 파이썬 파이프라인(schema.sql)이 만들어둔

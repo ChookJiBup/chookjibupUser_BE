@@ -5,15 +5,17 @@ import com.example.chookjibupuser.festival.dto.FestivalPageView;
 import com.example.chookjibupuser.festival.dto.FestivalSummaryView;
 import com.example.chookjibupuser.global.response.CustomException;
 import com.example.chookjibupuser.global.response.ErrorCode;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 축제 목록을 로컬 Postgres에서 직접 조회한다(JPA). festival 도메인 자신의
@@ -82,6 +84,18 @@ public class FestivalQueryService {
      */
     public boolean exists(Long festivalId) {
         return festivalRepository.existsById(festivalId);
+    }
+
+    /**
+     * 프론트 URL/QR코드에 담긴 public_id(외부 식별자)를 내부 festival_id로 바꾼다.
+     * 리뷰 작성처럼, 다른 도메인이 "이 축제가 뭔지" 알아야 하는 orchestration
+     * 지점에서 이 메서드를 쓴다 — festival 테이블의 내부 PK 구조는 다른 도메인에
+     * 노출하지 않고, 여기서 한 번 변환해서 넘겨준다.
+     */
+    public Long getFestivalIdByPublicId(UUID publicId) {
+        return festivalRepository.findByPublicId(publicId)
+                .map(Festival::getFestivalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FESTIVAL_NOT_FOUND));
     }
 
     private int normalizePage(Integer page) {

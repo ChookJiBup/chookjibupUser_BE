@@ -13,12 +13,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * 축제 찜 토글/내 찜 목록 조회 API. 로그인한 사용자만 사용할 수 있다.
@@ -38,14 +35,15 @@ public class UserWishlistController {
      * 최종 상태만 확인하면 된다.
      */
     @Operation(summary = "축제 찜 토글 (하트 클릭)", description = "찜 안 한 상태에서 누르면 찜하고, "
-            + "이미 찜한 상태에서 누르면 찜을 취소합니다. 실패 케이스 없이 항상 최종 상태를 돌려줍니다.")
+            + "이미 찜한 상태에서 누르면 찜을 취소합니다. 실패 케이스 없이 항상 최종 상태를 돌려줍니다. "
+            + "경로의 festivalPublicId는 목록/상세 조회 응답의 publicId 값입니다.")
     @SecurityRequirement(name = "bearerAuth")
-    @PostMapping("/{festivalId}/toggle")
+    @PostMapping("/{festivalPublicId}/toggle")
     public ApiResponse<WishlistToggleResponse> toggle(
-            @PathVariable Long festivalId,
+            @PathVariable UUID festivalPublicId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        WishlistToggleResponse response = userWishlistService.toggle(requireUserId(principal), festivalId);
+        WishlistToggleResponse response = userWishlistService.toggle(requireUserId(principal), festivalPublicId);
         return ApiResponse.success(SuccessCode.WISHLIST_TOGGLE_SUCCESS, response);
     }
 

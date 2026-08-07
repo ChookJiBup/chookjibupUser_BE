@@ -4,10 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * 축제 데이터. 파이썬 파이프라인(julcut_data_pipeline)이 공공데이터 API로 채우고
@@ -27,6 +29,12 @@ public class Festival {
     @Id
     @Column(name = "festival_id")
     private Long festivalId;
+
+    // 프론트 URL/QR코드에 노출하는 외부 식별자. festival_id(내부 PK)는 절대 노출하지 않는다.
+    // 일반 UUID 컬럼이라(네이티브 ENUM이 아님) 엔티티 필드로 직접 매핑해도 ddl-auto: validate에
+    // 문제가 없다.
+    @Column(name = "public_id")
+    private UUID publicId;
 
     @Column(name = "festival_name")
     private String festivalName;

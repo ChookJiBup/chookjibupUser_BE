@@ -1,7 +1,8 @@
 package com.example.chookjibupuser.roadmap;
 
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 
 public interface RoadmapIconPlacementRepository extends JpaRepository<RoadmapIconPlacement, Long> {
 

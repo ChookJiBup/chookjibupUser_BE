@@ -1,6 +1,7 @@
 package com.example.chookjibupuser.festival;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * 네이티브 쿼리 결과를 받는 인터페이스 프로젝션이다.
@@ -15,6 +16,9 @@ import java.time.LocalDate;
 public interface FestivalRow {
 
     Long getFestivalId();
+
+    /** 프론트 URL/QR코드에 노출하는 외부 식별자. festival_id(내부 PK)는 절대 노출하지 않는다. */
+    UUID getPublicId();
 
     String getFestivalName();
 

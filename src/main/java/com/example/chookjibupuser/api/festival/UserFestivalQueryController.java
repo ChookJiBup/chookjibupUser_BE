@@ -10,11 +10,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * 축제 목록 조회 API. 비회원도 조회할 수 있다.
@@ -47,14 +45,15 @@ public class UserFestivalQueryController {
     }
 
     @Operation(summary = "축제 상세 조회", description = "비회원도 호출할 수 있습니다. "
-            + "로그인 상태로 호출하면 wishlisted 여부가 채워집니다.")
-    @GetMapping("/{festivalId}")
+            + "로그인 상태로 호출하면 wishlisted 여부가 채워집니다. "
+            + "경로의 festivalPublicId는 목록 조회 응답의 publicId 값입니다.")
+    @GetMapping("/{festivalPublicId}")
     public ApiResponse<UserFestivalDetailResponse> getFestival(
-            @PathVariable Long festivalId,
+            @PathVariable UUID festivalPublicId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         UserFestivalDetailResponse response = userFestivalService.getFestivalDetail(
-                festivalId,
+                festivalPublicId,
                 principal == null ? null : principal.userId()
         );
         return ApiResponse.success(SuccessCode.FESTIVAL_LIST_READ_SUCCESS, response);

@@ -1,6 +1,7 @@
 package com.example.chookjibupuser.api.festival.dto;
 
 import com.example.chookjibupuser.roadmap.dto.RoadmapIconView;
+
 import java.math.BigDecimal;
 
 public record RoadmapIconResponse(

@@ -1,6 +1,7 @@
 package com.example.chookjibupuser.api.festival.dto;
 
 import com.example.chookjibupuser.congestion.dto.BoothCongestionView;
+
 import java.time.OffsetDateTime;
 
 public record BoothCongestionResponse(

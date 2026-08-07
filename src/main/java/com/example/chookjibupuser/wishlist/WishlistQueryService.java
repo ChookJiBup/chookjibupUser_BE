@@ -4,15 +4,16 @@ import com.example.chookjibupuser.global.response.CustomException;
 import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.wishlist.dto.WishlistEntryPageView;
 import com.example.chookjibupuser.wishlist.dto.WishlistEntryView;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 찜 조회를 처리한다. wishlist 도메인 자신의 저장소만 다룬다 — 축제 상세 정보는

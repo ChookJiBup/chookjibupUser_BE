@@ -5,18 +5,18 @@ import com.example.chookjibupuser.api.wishlist.dto.MyWishlistPageResponse;
 import com.example.chookjibupuser.api.wishlist.dto.WishlistToggleResponse;
 import com.example.chookjibupuser.festival.FestivalQueryService;
 import com.example.chookjibupuser.festival.dto.FestivalSummaryView;
-import com.example.chookjibupuser.global.response.CustomException;
-import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.wishlist.WishlistCommandService;
 import com.example.chookjibupuser.wishlist.WishlistQueryService;
 import com.example.chookjibupuser.wishlist.dto.WishlistEntryPageView;
 import com.example.chookjibupuser.wishlist.dto.WishlistEntryView;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 축제 찜 유스케이스(토글/내 찜 목록)를 처리하는 application 계층 조합 서비스이다.
@@ -38,12 +38,14 @@ public class UserWishlistService {
     /**
      * 하트 클릭 = 찜 토글. 이미 찜했으면 취소하고, 안 했으면 찜한다.
      * 어느 쪽이든 실패로 취급하지 않는다 — 존재하지 않는 축제일 때만 예외를 던진다.
+     *
+     * @param festivalPublicId 프론트 URL/QR코드에 담긴 축제의 외부 식별자(UUID).
+     *                         내부 festivalId로 바꾸는 과정에서 존재하지 않는 축제면
+     *                         자동으로 FESTIVAL_NOT_FOUND가 던져진다(별도 exists 체크 불필요).
      */
-    public WishlistToggleResponse toggle(Long userId, Long festivalId) {
-        if (!festivalQueryService.exists(festivalId)) {
-            throw new CustomException(ErrorCode.FESTIVAL_NOT_FOUND);
-        }
-        return new WishlistToggleResponse(festivalId, toggleSafely(userId, festivalId));
+    public WishlistToggleResponse toggle(Long userId, UUID festivalPublicId) {
+        Long festivalId = festivalQueryService.getFestivalIdByPublicId(festivalPublicId);
+        return new WishlistToggleResponse(festivalPublicId, toggleSafely(userId, festivalId));
     }
 
     /**

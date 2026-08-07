@@ -6,15 +6,16 @@ import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.user.UserAccount;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 /**
  * 사용자 Access Token을 HMAC-SHA256 JWT 형식으로 발급하고 검증한다.

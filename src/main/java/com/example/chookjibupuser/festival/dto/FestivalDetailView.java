@@ -1,7 +1,9 @@
 package com.example.chookjibupuser.festival.dto;
 
 import com.example.chookjibupuser.festival.FestivalRow;
+
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * 축제 상세 화면 전용 뷰이다. 목록용 {@link FestivalSummaryView}와 달리
@@ -9,6 +11,7 @@ import java.time.LocalDate;
  */
 public record FestivalDetailView(
         Long festivalId,
+        UUID publicId,
         String name,
         String eventPlace,
         String address,
@@ -23,6 +26,7 @@ public record FestivalDetailView(
     public static FestivalDetailView of(FestivalRow row) {
         return new FestivalDetailView(
                 row.getFestivalId(),
+                row.getPublicId(),
                 row.getFestivalName(),
                 row.getEventPlace(),
                 row.getRoadAddress(),

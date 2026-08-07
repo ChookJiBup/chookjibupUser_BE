@@ -1,10 +1,11 @@
 package com.example.chookjibupuser.booth;
 
 import com.example.chookjibupuser.booth.dto.BoothView;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 부스 조회를 처리한다. booth 도메인 자신의 저장소만 다룬다 — 혼잡도(congestion)
