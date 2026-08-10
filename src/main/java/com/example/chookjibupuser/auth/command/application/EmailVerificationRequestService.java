@@ -1,6 +1,6 @@
 package com.example.chookjibupuser.auth.command.application;
 
-import com.example.chookjibupuser.auth.command.infrastructure.mail.MailSender;
+import com.example.chookjibupuser.auth.command.infrastructure.mail.VerificationMailSender;
 import com.example.chookjibupuser.emailverification.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class EmailVerificationRequestService {
 
     private final EmailVerificationService emailVerificationService;
-    private final MailSender mailSender;
+    private final VerificationMailSender mailSender;
 
     public void sendVerificationCode(String email) {
         String code = emailVerificationService.issueCode(email);
