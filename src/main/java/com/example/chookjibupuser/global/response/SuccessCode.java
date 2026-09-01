@@ -10,6 +10,8 @@ public enum SuccessCode {
     AUTH_EMAIL_VERIFICATION_SUCCESS(21002, "이메일 인증이 완료되었습니다."),
     USER_EMAIL_SIGNUP_SUCCESS(21003, "회원가입이 완료되었습니다."),
     USER_EMAIL_LOGIN_SUCCESS(21004, "로그인에 성공했습니다."),
+    USER_SESSION_READ_SUCCESS(21005, "사용자 세션을 조회했습니다."),
+    USER_LOGOUT_SUCCESS(21006, "로그아웃했습니다."),
     FESTIVAL_LIST_READ_SUCCESS(22000, "축제 목록 조회가 완료되었습니다."),
     WISHLIST_TOGGLE_SUCCESS(23000, "찜 상태가 변경되었습니다."),
     WISHLIST_READ_SUCCESS(23002, "찜한 축제 목록 조회가 완료되었습니다."),

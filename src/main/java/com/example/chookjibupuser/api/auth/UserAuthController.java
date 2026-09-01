@@ -5,12 +5,22 @@ import com.example.chookjibupuser.auth.command.application.EmailLoginService;
 import com.example.chookjibupuser.auth.command.application.EmailSignupService;
 import com.example.chookjibupuser.auth.command.application.EmailVerificationRequestService;
 import com.example.chookjibupuser.auth.command.application.KakaoLoginService;
+import com.example.chookjibupuser.auth.command.infrastructure.JwtTokenProvider;
+import com.example.chookjibupuser.auth.support.UserAuthCookieService;
+import com.example.chookjibupuser.auth.support.UserPrincipal;
 import com.example.chookjibupuser.global.response.ApiResponse;
+import com.example.chookjibupuser.global.response.CustomException;
+import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.global.response.SuccessCode;
+import com.example.chookjibupuser.user.UserAccountRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,12 +40,15 @@ public class UserAuthController {
     private final EmailVerificationRequestService emailVerificationRequestService;
     private final EmailSignupService emailSignupService;
     private final EmailLoginService emailLoginService;
+    private final UserAuthCookieService authCookieService;
+    private final UserAccountRepository userAccountRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary = "카카오 로그인", description = "프론트엔드에서 받은 카카오 인가 코드로 로그인합니다. "
             + "가입 이력이 없으면 자동으로 회원가입됩니다.")
     @PostMapping("/kakao/login")
-    public ApiResponse<UserLoginResponse> kakaoLogin(@Valid @RequestBody KakaoLoginRequest request) {
-        return ApiResponse.success(SuccessCode.USER_KAKAO_LOGIN_SUCCESS, kakaoLoginService.login(request));
+    public ResponseEntity<ApiResponse<UserSessionResponse>> kakaoLogin(@Valid @RequestBody KakaoLoginRequest request) {
+        return authenticatedResponse(SuccessCode.USER_KAKAO_LOGIN_SUCCESS, kakaoLoginService.login(request));
     }
 
     @Operation(summary = "이메일 인증코드 발송", description = "회원가입할 이메일로 6자리 인증코드를 보냅니다. "
@@ -56,13 +69,43 @@ public class UserAuthController {
 
     @Operation(summary = "이메일 회원가입", description = "인증코드 확인이 먼저 완료된 이메일만 가입할 수 있습니다.")
     @PostMapping("/email/signup")
-    public ApiResponse<UserLoginResponse> emailSignup(@Valid @RequestBody EmailSignupRequest request) {
-        return ApiResponse.success(SuccessCode.USER_EMAIL_SIGNUP_SUCCESS, emailSignupService.signup(request));
+    public ResponseEntity<ApiResponse<UserSessionResponse>> emailSignup(@Valid @RequestBody EmailSignupRequest request) {
+        return authenticatedResponse(SuccessCode.USER_EMAIL_SIGNUP_SUCCESS, emailSignupService.signup(request));
     }
 
     @Operation(summary = "이메일 로그인")
     @PostMapping("/email/login")
-    public ApiResponse<UserLoginResponse> emailLogin(@Valid @RequestBody EmailLoginRequest request) {
-        return ApiResponse.success(SuccessCode.USER_EMAIL_LOGIN_SUCCESS, emailLoginService.login(request));
+    public ResponseEntity<ApiResponse<UserSessionResponse>> emailLogin(@Valid @RequestBody EmailLoginRequest request) {
+        return authenticatedResponse(SuccessCode.USER_EMAIL_LOGIN_SUCCESS, emailLoginService.login(request));
+    }
+
+    @Operation(summary = "현재 사용자 세션 조회")
+    @GetMapping("/me")
+    public ApiResponse<UserSessionResponse> me(@AuthenticationPrincipal UserPrincipal principal) {
+        var userAccount = userAccountRepository.findById(principal.userId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return ApiResponse.success(
+                SuccessCode.USER_SESSION_READ_SUCCESS,
+                UserSessionResponse.from(userAccount, jwtTokenProvider.getAccessTokenExpirationSeconds())
+        );
+    }
+
+    @Operation(summary = "사용자 로그아웃")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookieService.expire().toString())
+                .body(ApiResponse.success(SuccessCode.USER_LOGOUT_SUCCESS));
+    }
+
+    private ResponseEntity<ApiResponse<UserSessionResponse>> authenticatedResponse(
+            SuccessCode successCode,
+            UserLoginResponse loginResponse
+    ) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookieService.create(
+                        loginResponse.accessToken(), loginResponse.accessTokenExpiresInSeconds()
+                ).toString())
+                .body(ApiResponse.success(successCode, UserSessionResponse.from(loginResponse)));
     }
 }

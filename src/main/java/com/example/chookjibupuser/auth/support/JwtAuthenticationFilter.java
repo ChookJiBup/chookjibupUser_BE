@@ -28,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserAuthCookieService authCookieService;
 
     @Override
     protected void doFilterInternal(
@@ -35,13 +36,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String authorization = request.getHeader(AUTHORIZATION_HEADER);
+        String accessToken = resolveAccessToken(request);
 
-        if (authorization != null && authorization.startsWith(BEARER_PREFIX)) {
+        if (accessToken != null) {
             try {
-                UserPrincipal principal = jwtTokenProvider.parse(
-                        authorization.substring(BEARER_PREFIX.length())
-                );
+                UserPrincipal principal = jwtTokenProvider.parse(accessToken);
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, Collections.emptyList())
                 );
@@ -51,5 +50,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveAccessToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if (authCookieService.cookieName().equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        String authorization = request.getHeader(AUTHORIZATION_HEADER);
+        if (authorization != null && authorization.startsWith(BEARER_PREFIX)) {
+            return authorization.substring(BEARER_PREFIX.length());
+        }
+        return null;
     }
 }
