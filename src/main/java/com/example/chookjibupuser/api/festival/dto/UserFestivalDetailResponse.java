@@ -1,62 +1,27 @@
+// api/festival/dto/UserFestivalDetailResponse.java (전체)
 package com.example.chookjibupuser.api.festival.dto;
 
 import com.example.chookjibupuser.festival.dto.FestivalDetailView;
 import com.example.chookjibupuser.festival.dto.FestivalProgressStatus;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalTime;
 import java.util.UUID;
 
-/**
- * 축제 상세 화면 응답이다. festival 도메인 자체 정보 외에, 다른 도메인 조회 결과를
- * api 계층(UserFestivalService)이 조합해서 채운다.
- *
- * <p>festivalId(내부 PK)는 응답에 노출하지 않는다 — {@code publicId}만 노출한다.</p>
- *
- * <ul>
- *   <li>roadmap, booths — 저장돼 있으면 축제 상태와 무관하게 항상 채움 (없으면 roadmap=null, booths=[])</li>
- *   <li>festivalCongestionLevel, 각 부스의 congestion — 축제가 진행중(ONGOING)일 때만 채움</li>
- * </ul>
- */
+/** roadmap은 관리자가 PUBLISHED 해둔 경우에만 채워지고, 아니면 null. */
 public record UserFestivalDetailResponse(
-        UUID publicId,
-        String name,
-        String eventPlace,
-        String address,
-        LocalDate startDate,
-        LocalDate endDate,
-        String content,
-        String phoneNumber,
-        String homepageUrl,
+        UUID publicId, String name, String eventPlace, String address, String detailAddress,
+        LocalDate startDate, LocalDate endDate, LocalTime operationStartTime, LocalTime operationEndTime,
+        String content, String phoneNumber, String homepageUrl,
+        BigDecimal latitude, BigDecimal longitude,
         FestivalProgressStatus progressStatus,
-        boolean wishlisted,
-        String festivalCongestionLevel,
-        RoadmapResponse roadmap,
-        List<BoothResponse> booths
+        boolean wishlisted, RoadmapResponse roadmap
 ) {
-
-    public static UserFestivalDetailResponse of(
-            FestivalDetailView view,
-            boolean wishlisted,
-            String festivalCongestionLevel,
-            RoadmapResponse roadmap,
-            List<BoothResponse> booths
-    ) {
-        return new UserFestivalDetailResponse(
-                view.publicId(),
-                view.name(),
-                view.eventPlace(),
-                view.address(),
-                view.startDate(),
-                view.endDate(),
-                view.content(),
-                view.phoneNumber(),
-                view.homepageUrl(),
-                view.progressStatus(),
-                wishlisted,
-                festivalCongestionLevel,
-                roadmap,
-                booths
-        );
+    public static UserFestivalDetailResponse of(FestivalDetailView view, boolean wishlisted, RoadmapResponse roadmap) {
+        return new UserFestivalDetailResponse(view.publicId(), view.name(), view.eventPlace(), view.address(),
+                view.detailAddress(), view.startDate(), view.endDate(), view.operationStartTime(),
+                view.operationEndTime(), view.content(), view.phoneNumber(), view.homepageUrl(),
+                view.latitude(), view.longitude(),
+                view.progressStatus(), wishlisted, roadmap);
     }
 }

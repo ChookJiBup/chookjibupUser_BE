@@ -1,24 +1,20 @@
+// congestion/BoothCongestion.java (신규)
 package com.example.chookjibupuser.congestion;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-
 /**
- * 부스 혼잡도 이력. {@code booth_congestion} 테이블에 매핑한다.
- *
- * <p>{@code congestion_level} 컬럼은 Postgres 네이티브 ENUM 타입(스키마에
- * {@code CREATE TYPE congestion_level AS ENUM (...)}로 정의됨)이라 JPA 엔티티
- * 필드로 직접 매핑하지 않았다 — JDBC가 이 컬럼을 VARCHAR가 아니라 OTHER/사용자
- * 정의 타입으로 보고하기 때문에, 일반 String 매핑은 {@code ddl-auto: validate}에서
- * 타입 불일치로 실패할 위험이 크다. 대신 {@link BoothCongestionRepository}의
- * 네이티브 쿼리에서 {@code ::text}로 캐스팅해서 안전하게 읽어온다.</p>
+ * 부스 혼잡 이력 한 건. 관리자 백엔드의 {@code booth_congestion} 테이블(append-only)을
+ * 읽기 전용으로 매핑한다. "지금 혼잡도"는 booth_id별 가장 최근(created_at 최댓값) 행이다.
  */
 @Entity
 @Getter
@@ -28,7 +24,7 @@ public class BoothCongestion {
 
     @Id
     @Column(name = "congestion_id")
-    private Long congestionId;
+    private Long id;
 
     @Column(name = "booth_id")
     private Long boothId;
@@ -36,6 +32,10 @@ public class BoothCongestion {
     @Column(name = "wait_minutes")
     private Integer waitMinutes;
 
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "congestion_level", length = 20)
+    private BoothCongestionLevel congestionLevel;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

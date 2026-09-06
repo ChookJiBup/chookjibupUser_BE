@@ -1,20 +1,20 @@
+// roadmap/RoadmapQueryService.java
 package com.example.chookjibupuser.roadmap;
 
-import com.example.chookjibupuser.roadmap.dto.RoadmapIconView;
+import com.example.chookjibupuser.roadmap.dto.NodeView;
 import com.example.chookjibupuser.roadmap.dto.RoadmapView;
+import com.example.chookjibupuser.roadmap.dto.ZoneView;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import org.springframework.util.StringUtils;
 
 /**
- * 축제 로드맵 조회를 처리한다. roadmap 도메인 자신의 저장소만 다룬다
- * (festival_roadmap / roadmap_icon_placement / roadmap_icon_type 세 테이블만) —
- * festival이나 booth 엔티티는 전혀 모르고, related_booth_id도 그냥 숫자로만 들고 있다.
+ * [중요] 실시간 대기시간/혼잡도는 관리자 백엔드에 그걸 갱신하는 기능 자체가 없어서
+ * 포함하지 않는다. 지금은 "부스가 어디에 있는지"(로드맵 위치 정보)까지만 제공한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -22,54 +22,50 @@ import java.util.Optional;
 public class RoadmapQueryService {
 
     private final FestivalRoadmapRepository festivalRoadmapRepository;
-    private final RoadmapIconPlacementRepository roadmapIconPlacementRepository;
-    private final RoadmapIconTypeRepository roadmapIconTypeRepository;
+    private final RoadmapNodeRepository roadmapNodeRepository;
+    private final FestivalMapRepository festivalMapRepository;
+    private final MapImageProperties mapImageProperties;
 
-    /**
-     * 축제의 로드맵을 조회한다. 관리자/운영자가 아직 로드맵을 만들지 않았으면 empty.
-     */
-    public Optional<RoadmapView> getRoadmap(Long festivalId) {
-        Optional<FestivalRoadmap> roadmap = festivalRoadmapRepository.findById(festivalId);
-        if (roadmap.isEmpty()) {
-            return Optional.empty();
+    /** @return 로드맵이 없거나 아직 PUBLISHED 안 됐으면 null. */
+    public RoadmapView getRoadmap(Long festivalId) {
+        FestivalRoadmap roadmap = festivalRoadmapRepository.findByFestivalId(festivalId).orElse(null);
+        if (roadmap == null || !roadmap.isPublished()) {
+            return null;
         }
 
-        String roadmapType = festivalRoadmapRepository.findRoadmapTypeText(festivalId).orElse(null);
-        List<RoadmapIconPlacement> placements = roadmapIconPlacementRepository.findByFestivalId(festivalId);
-        Map<Long, RoadmapIconType> iconTypeById = loadIconTypes(placements);
+        List<RoadmapNode> confirmedNodes = roadmapNodeRepository
+                .findByRoadmapIdOrderBySortOrderAsc(roadmap.getId())
+                .stream().filter(RoadmapNode::isConfirmed).toList();
 
-        List<RoadmapIconView> icons = placements.stream()
-                .map(placement -> toIconView(placement, iconTypeById))
+        Map<UUID, NodeView> boothsByPublicId = confirmedNodes.stream()
+                .filter(RoadmapNode::isBooth)
+                .collect(java.util.stream.Collectors.toMap(RoadmapNode::getPublicId, NodeView::of));
+
+        List<ZoneView> zones = roadmap.getZones().stream()
+                .map(zone -> toZoneView(zone, boothsByPublicId)).toList();
+
+        List<NodeView> otherNodes = confirmedNodes.stream()
+                .filter(node -> !node.isBooth()).map(NodeView::of).toList();
+
+        return new RoadmapView(roadmap.getPublicId(), resolveMapImageUrl(festivalId), zones, otherNodes);
+    }
+
+    private ZoneView toZoneView(RoadmapZone zone, Map<UUID, NodeView> boothsByPublicId) {
+        List<NodeView> booths = zone.boothNodeIds().stream()
+                .map(boothsByPublicId::get)
+                .filter(java.util.Objects::nonNull)
                 .toList();
-
-        return Optional.of(new RoadmapView(
-                roadmapType,
-                roadmap.get().getBaseImageUrl(),
-                roadmap.get().getCanvasWidth(),
-                roadmap.get().getCanvasHeight(),
-                icons
-        ));
+        return new ZoneView(zone.zoneId(), zone.name(), zone.sortOrder(), booths);
     }
 
-    private Map<Long, RoadmapIconType> loadIconTypes(List<RoadmapIconPlacement> placements) {
-        List<Long> iconTypeIds = placements.stream().map(RoadmapIconPlacement::getIconTypeId).distinct().toList();
-        Map<Long, RoadmapIconType> result = new HashMap<>();
-        roadmapIconTypeRepository.findAllById(iconTypeIds).forEach(t -> result.put(t.getIconTypeId(), t));
-        return result;
-    }
-
-    private RoadmapIconView toIconView(RoadmapIconPlacement placement, Map<Long, RoadmapIconType> iconTypeById) {
-        RoadmapIconType iconType = iconTypeById.get(placement.getIconTypeId());
-        return new RoadmapIconView(
-                placement.getPlacementId(),
-                iconType == null ? null : iconType.getCode(),
-                iconType == null ? null : iconType.getName(),
-                iconType == null ? null : iconType.getIconImageUrl(),
-                placement.getRelatedBoothId(),
-                placement.getPositionX(),
-                placement.getPositionY(),
-                placement.getRotationDeg(),
-                placement.getLabel()
-        );
+    private String resolveMapImageUrl(Long festivalId) {
+        if (!StringUtils.hasText(mapImageProperties.imageBaseUrl())) {
+            return null;
+        }
+        return festivalMapRepository.findByFestivalId(festivalId)
+                .map(FestivalMap::getDisplayImageKey)
+                .filter(StringUtils::hasText)
+                .map(key -> mapImageProperties.imageBaseUrl().replaceAll("/+$", "") + "/" + key)
+                .orElse(null);
     }
 }

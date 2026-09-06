@@ -1,19 +1,23 @@
+// roadmap/FestivalRoadmap.java
 package com.example.chookjibupuser.roadmap;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
- * 축제 로드맵(1:1). {@code festival_roadmap} 테이블에 매핑한다.
- *
- * <p>{@code roadmap_type} 컬럼은 Postgres 네이티브 ENUM 타입이라, {@code congestion_level}과
- * 같은 이유로 엔티티 필드로 매핑하지 않았다 — {@link FestivalRoadmapRepository}의
- * 네이티브 쿼리에서 ::text로 캐스팅해서 읽는다.</p>
+ * 읽기 전용. status가 PUBLISHED일 때만 사용자에게 보여준다 (RoadmapQueryService 참고).
  */
 @Entity
 @Getter
@@ -22,15 +26,31 @@ import lombok.NoArgsConstructor;
 public class FestivalRoadmap {
 
     @Id
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "public_id")
+    private UUID publicId;
+
     @Column(name = "festival_id")
     private Long festivalId;
 
-    @Column(name = "base_image_url")
-    private String baseImageUrl;
+    @Column(name = "current_map_id")
+    private Long currentMapId;
 
-    @Column(name = "canvas_width")
-    private Integer canvasWidth;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 30)
+    private RoadmapStatus status;
 
-    @Column(name = "canvas_height")
-    private Integer canvasHeight;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "zones", columnDefinition = "jsonb")
+    private List<RoadmapZone> zones;
+
+    public List<RoadmapZone> getZones() {
+        return Collections.unmodifiableList(zones == null ? List.of() : zones);
+    }
+
+    public boolean isPublished() {
+        return status == RoadmapStatus.PUBLISHED;
+    }
 }

@@ -1,39 +1,47 @@
+// festival/dto/FestivalSummaryView.java (전체)
 package com.example.chookjibupuser.festival.dto;
 
-import com.example.chookjibupuser.festival.FestivalRow;
-
+import com.example.chookjibupuser.festival.Festival;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
-/**
- * festival 도메인의 순수한 뷰이다. 찜 여부 같은 다른 도메인 정보는 담지 않는다
- * (그건 api 계층에서 조합할 때 별도로 얹는다).
- */
 public record FestivalSummaryView(
         Long festivalId,
         UUID publicId,
         String name,
         String eventPlace,
         String address,
+        String detailAddress,
         LocalDate startDate,
         LocalDate endDate,
+        LocalTime operationStartTime,
+        LocalTime operationEndTime,
         String phoneNumber,
         String homepageUrl,
+        BigDecimal latitude,
+        BigDecimal longitude,
         FestivalProgressStatus progressStatus
 ) {
 
-    public static FestivalSummaryView of(FestivalRow row) {
+    public static FestivalSummaryView of(Festival festival) {
         return new FestivalSummaryView(
-                row.getFestivalId(),
-                row.getPublicId(),
-                row.getFestivalName(),
-                row.getEventPlace(),
-                row.getRoadAddress(),
-                row.getStartDate(),
-                row.getEndDate(),
-                row.getPhoneNumber(),
-                row.getHomepageUrl(),
-                FestivalProgressStatus.fromDbValue(row.getProgressStatus())
+                festival.getFestivalId(),
+                festival.getPublicId(),
+                festival.getFestivalName(),
+                festival.getEventPlace(),
+                festival.getRoadAddress(),
+                festival.getDetailAddress(),
+                festival.getStartDate(),
+                festival.getEndDate(),
+                festival.getOperationStartTime(),
+                festival.getOperationEndTime(),
+                festival.getPhoneNumber(),
+                festival.getHomepageUrl(),
+                festival.getLatitude(),
+                festival.getLongitude(),
+                FestivalProgressStatus.from(LocalDate.now(), festival.getStartDate(), festival.getEndDate())
         );
     }
 }

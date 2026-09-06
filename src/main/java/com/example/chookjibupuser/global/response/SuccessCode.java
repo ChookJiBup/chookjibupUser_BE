@@ -16,7 +16,8 @@ public enum SuccessCode {
     WISHLIST_TOGGLE_SUCCESS(23000, "찜 상태가 변경되었습니다."),
     WISHLIST_READ_SUCCESS(23002, "찜한 축제 목록 조회가 완료되었습니다."),
     REVIEW_CREATE_SUCCESS(24000, "리뷰가 등록되었습니다."),
-    REVIEW_READ_SUCCESS(24001, "리뷰 목록 조회가 완료되었습니다.");
+    REVIEW_READ_SUCCESS(24001, "리뷰 목록 조회가 완료되었습니다."),
+    FESTIVAL_CONGESTION_READ_SUCCESS(25000, "축제 혼잡도 조회가 완료되었습니다.");  // ← 세미콜론 위치도 여기로 옮겨야 함
 
     private final int code;
     private final String message;

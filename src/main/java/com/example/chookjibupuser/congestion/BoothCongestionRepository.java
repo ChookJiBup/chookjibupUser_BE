@@ -1,27 +1,39 @@
+// congestion/BoothCongestionRepository.java (신규)
 package com.example.chookjibupuser.congestion;
 
+import java.util.Collection;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-
 public interface BoothCongestionRepository extends JpaRepository<BoothCongestion, Long> {
 
     /**
-     * 주어진 부스들의 "가장 최근" 혼잡도 한 건씩만 가져온다 (부스마다 이력이 여러 건
-     * 쌓이기 때문에 Postgres의 DISTINCT ON으로 부스별 최신 1건만 뽑는다).
-     * congestion_level은 Postgres 네이티브 ENUM이라 ::text로 캐스팅해서 문자열로 받는다.
+     * 각 boothId별로 가장 최근(created_at 최댓값, 동률이면 congestion_id 최댓값) 행만
+     * 골라서 반환한다 — 관리자 백엔드의 findLatestByBoothIds와 동일한 쿼리다.
      */
-    @Query(value = """
-            SELECT DISTINCT ON (booth_id)
-                booth_id AS boothId,
-                congestion_level::text AS congestionLevel,
-                wait_minutes AS waitMinutes,
-                updated_at AS updatedAt
-            FROM booth_congestion
-            WHERE booth_id IN (:boothIds)
-            ORDER BY booth_id, updated_at DESC
-            """, nativeQuery = true)
-    List<BoothCongestionProjection> findLatestByBoothIds(@Param("boothIds") List<Long> boothIds);
+    @Query(
+            value = """
+                    SELECT bc.*
+                    FROM booth_congestion bc
+                    INNER JOIN (
+                        SELECT booth_id, MAX(created_at) AS max_created
+                        FROM booth_congestion
+                        WHERE booth_id IN (:boothIds)
+                        GROUP BY booth_id
+                    ) latest
+                      ON bc.booth_id = latest.booth_id AND bc.created_at = latest.max_created
+                    INNER JOIN (
+                        SELECT booth_id, created_at, MAX(congestion_id) AS max_id
+                        FROM booth_congestion
+                        WHERE booth_id IN (:boothIds)
+                        GROUP BY booth_id, created_at
+                    ) tie
+                      ON bc.booth_id = tie.booth_id AND bc.created_at = tie.created_at
+                     AND bc.congestion_id = tie.max_id
+                    """,
+            nativeQuery = true
+    )
+    List<BoothCongestion> findLatestByBoothIds(@Param("boothIds") Collection<Long> boothIds);
 }

@@ -25,12 +25,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 
 /**
  * 카카오 로그인, 이메일 회원가입/로그인 API를 제공한다.
  * 이메일 가입 순서: 인증코드 발송 → 인증코드 확인 → 회원가입.
  */
 @Tag(name = "User Auth", description = "카카오/이메일 로그인·회원가입 API")
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -43,12 +48,22 @@ public class UserAuthController {
     private final UserAuthCookieService authCookieService;
     private final UserAccountRepository userAccountRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserAuthCookieService userAuthCookieService;
 
-    @Operation(summary = "카카오 로그인", description = "프론트엔드에서 받은 카카오 인가 코드로 로그인합니다. "
-            + "가입 이력이 없으면 자동으로 회원가입됩니다.")
     @PostMapping("/kakao/login")
-    public ResponseEntity<ApiResponse<UserSessionResponse>> kakaoLogin(@Valid @RequestBody KakaoLoginRequest request) {
-        return authenticatedResponse(SuccessCode.USER_KAKAO_LOGIN_SUCCESS, kakaoLoginService.login(request));
+    public ApiResponse<UserLoginResponse> kakaoLogin(
+            @Valid @RequestBody KakaoLoginRequest request,
+            HttpServletResponse response
+    ) {
+        UserLoginResponse result = kakaoLoginService.login(request);
+
+        ResponseCookie cookie = userAuthCookieService.create(
+                result.accessToken(),
+                result.accessTokenExpiresInSeconds()
+        );
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ApiResponse.success(SuccessCode.USER_KAKAO_LOGIN_SUCCESS, result);
     }
 
     @Operation(summary = "이메일 인증코드 발송", description = "회원가입할 이메일로 6자리 인증코드를 보냅니다. "

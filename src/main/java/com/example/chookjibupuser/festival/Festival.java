@@ -1,24 +1,26 @@
+// festival/Festival.java (전체)
 package com.example.chookjibupuser.festival;
 
+import com.example.chookjibupuser.festival.dto.FestivalPublicationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.UUID;
-
 /**
- * 축제 데이터. 파이썬 파이프라인(julcut_data_pipeline)이 공공데이터 API로 채우고
- * UPSERT로 계속 갱신하는 {@code festivals} 테이블에 그대로 매핑한다.
- *
- * <p>이 서버는 이 테이블을 읽기만 한다 — 쓰기(등록/수정)는 이 서비스 범위가 아니라서
- * 저장/수정 메서드를 두지 않았다. 테이블에는 이 외에도 pipeline이 매칭한
- * visitor_YYYY_* 동적 컬럼, raw_payload 등이 더 있지만, 목록 화면에 필요한
- * 컬럼만 골라 매핑했다(컴팩트하게 유지 — 필요한 컬럼이 늘면 여기 추가하면 된다).</p>
+ * 축제 기본 정보. {@code festivals} 테이블은 두 시스템이 같이 쓴다 —
+ * 파이썬 파이프라인(공공데이터 API 적재)과 관리자 백엔드(chookjibupAdmin_BE, 수동 등록)가
+ * 서로 다른 컬럼 집합을 각자 채운다. 이 엔티티는 두 집합을 합쳐서(union) 매핑하고,
+ * 어느 쪽으로 만들어진 축제인지는 신경 쓰지 않는다 — 값이 없으면 그냥 null이다.
  */
 @Entity
 @Getter
@@ -30,23 +32,42 @@ public class Festival {
     @Column(name = "festival_id")
     private Long festivalId;
 
-    // 프론트 URL/QR코드에 노출하는 외부 식별자. festival_id(내부 PK)는 절대 노출하지 않는다.
-    // 일반 UUID 컬럼이라(네이티브 ENUM이 아님) 엔티티 필드로 직접 매핑해도 ddl-auto: validate에
-    // 문제가 없다.
     @Column(name = "public_id")
     private UUID publicId;
 
-    @Column(name = "festival_name")
-    private String festivalName;
+    // ── 관리자 백엔드 쪽 컬럼 ──
+    @Column(name = "series_id")
+    private Long seriesId;
 
+    @Column(name = "festival_year")
+    private Integer year;
+
+    @Column(name = "detail_address")
+    private String detailAddress;
+
+    @Column(name = "operation_start_time")
+    private LocalTime operationStartTime;
+
+    @Column(name = "operation_end_time")
+    private LocalTime operationEndTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "publication_status", length = 30)
+    private FestivalPublicationStatus publicationStatus;
+
+    // ── 파이프라인 쪽 컬럼 ──
     @Column(name = "event_place")
     private String eventPlace;
 
-    @Column(name = "start_date")
-    private LocalDate startDate;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
-    @Column(name = "end_date")
-    private LocalDate endDate;
+    @Column(name = "homepage_url")
+    private String homepageUrl;
+
+    // ── 공통 컬럼 ──
+    @Column(name = "festival_name")
+    private String festivalName;
 
     @Column(name = "content")
     private String content;
@@ -54,9 +75,17 @@ public class Festival {
     @Column(name = "road_address")
     private String roadAddress;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+    @Column(name = "start_date")
+    private LocalDate startDate;
 
-    @Column(name = "homepage_url")
-    private String homepageUrl;
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    // 지도(HOME02) 마커 표시용. 파이프라인이 공공데이터 API에서 받아 채운다 —
+    // 관리자가 수동 등록한 축제는 대부분 null일 수 있다.
+    @Column(precision = 10, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 10, scale = 6)
+    private BigDecimal longitude;
 }

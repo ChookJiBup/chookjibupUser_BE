@@ -1,3 +1,4 @@
+// api/festival/UserFestivalQueryController.java (전체)
 package com.example.chookjibupuser.api.festival;
 
 import com.example.chookjibupuser.api.festival.dto.UserFestivalDetailResponse;
@@ -14,11 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/**
- * 축제 목록 조회 API. 비회원도 조회할 수 있다.
- * 컨트롤러는 UserFestivalService 호출과 인증 주체 추출만 하고, 실제 조회/조합
- * 로직은 전부 서비스에 있다.
- */
 @Tag(name = "User Festival", description = "축제 목록 조회 API (비회원 가능)")
 @RestController
 @RequestMapping("/api/festivals")
@@ -29,14 +25,24 @@ public class UserFestivalQueryController {
 
     @Operation(summary = "축제 목록 조회", description = "비회원도 호출할 수 있습니다. "
             + "로그인 상태로 호출하면 항목마다 wishlisted 여부가 채워집니다. "
-            + "[임시] 필터(상태/이름/지역)는 서버 에러 원인 파악 전까지 잠시 뺐습니다 — 페이지네이션만 지원합니다.")
+            + "name으로 축제명 부분 일치 검색이 가능합니다(대소문자 무시). "
+            + "status(ONGOING/UPCOMING/COMPLETED)로 진행 상태 필터가 가능합니다. "
+            + "sort(WISHLIST_COUNT/REVIEW_COUNT)로 찜/리뷰 많은 순 정렬이 가능합니다(기본은 시작일순). "
+            + "name/status/sort는 서로 동시에 줄 수 없습니다. "
+            + "[임시] region(지역) 필터는 아직 없습니다.")
     @GetMapping
     public ApiResponse<UserFestivalPageResponse> getFestivals(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         UserFestivalPageResponse response = userFestivalService.getFestivals(
+                name,
+                status,
+                sort,
                 page,
                 size,
                 principal == null ? null : principal.userId()
