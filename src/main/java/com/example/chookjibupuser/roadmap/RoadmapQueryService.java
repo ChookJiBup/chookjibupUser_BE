@@ -33,10 +33,19 @@ public class RoadmapQueryService {
     private final MapImageProperties mapImageProperties;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /** @return 로드맵이 없거나 아직 PUBLISHED 안 됐으면 null. */
+    /**
+     * 축제 부스지도.
+     *
+     * <p>예전에는 로드맵이 {@code PUBLISHED}일 때만 내려줬는데, 관리자 쪽에 그 상태로 올리는
+     * 경로가 아예 없어 방문객은 어떤 축제의 부스지도도 볼 수 없었다. 관리자가 저장한 지도를
+     * 그대로 보여 준다. AI가 찾아만 둔 초안 노드는 아래 {@code isConfirmed} 필터가 계속
+     * 걸러내므로, 나가는 것은 관리자가 확인한 노드뿐이다.</p>
+     *
+     * @return 로드맵이 없으면 null.
+     */
     public RoadmapView getRoadmap(Long festivalId) {
         FestivalRoadmap roadmap = festivalRoadmapRepository.findByFestivalId(festivalId).orElse(null);
-        if (roadmap == null || !roadmap.isPublished()) {
+        if (roadmap == null) {
             return null;
         }
 

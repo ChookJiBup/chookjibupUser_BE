@@ -50,7 +50,4 @@ public class FestivalRoadmap {
         return Collections.unmodifiableList(zones == null ? List.of() : zones);
     }
 
-    public boolean isPublished() {
-        return status == RoadmapStatus.PUBLISHED;
-    }
 }
