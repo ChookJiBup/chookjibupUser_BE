@@ -15,11 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * 찜 조회를 처리한다. wishlist 도메인 자신의 저장소만 다룬다 — 축제 상세 정보는
- * 절대 여기서 채우지 않는다(festivalId만 돌려준다). 축제 상세와 합치는 건
- * api 계층의 책임이다.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,9 +26,6 @@ public class WishlistQueryService {
 
     private final WishlistRepository wishlistRepository;
 
-    /**
-     * 사용자가 찜한 festivalId 목록을 최신순으로 페이지 조회한다.
-     */
     public WishlistEntryPageView getMyWishlist(Long userId, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
         Page<FestivalWishlist> result = wishlistRepository.findByUserIdOrderByWishlistIdDesc(
@@ -52,9 +44,6 @@ public class WishlistQueryService {
         );
     }
 
-    /**
-     * 특정 축제를 사용자가 찜했는지 확인한다 (축제 상세 화면에서 쓴다).
-     */
     public boolean isWishlisted(Long userId, Long festivalId) {
         if (userId == null) {
             return false;
@@ -62,14 +51,26 @@ public class WishlistQueryService {
         return wishlistRepository.existsByUserIdAndFestivalId(userId, festivalId);
     }
 
-    /**
-     * 주어진 festivalId들 중, 사용자가 찜한 것만 골라 반환한다.
-     */
     public Set<Long> getWishlistedFestivalIds(Long userId, List<Long> festivalIds) {
         if (userId == null || festivalIds.isEmpty()) {
             return Set.of();
         }
         return new HashSet<>(wishlistRepository.findFestivalIdByUserIdAndFestivalIdIn(userId, festivalIds));
+    }
+
+    /**
+     * 주어진 festivalId들 각각의 찜(하트) 개수를 반환한다. 찜이 하나도 없는 festivalId는
+     * 결과 맵에서 빠진다 — 호출하는 쪽에서 없으면 0으로 취급하면 된다.
+     */
+    public java.util.Map<Long, Long> getWishlistCounts(List<Long> festivalIds) {
+        if (festivalIds.isEmpty()) {
+            return java.util.Map.of();
+        }
+        java.util.Map<Long, Long> result = new java.util.LinkedHashMap<>();
+        for (Object[] row : wishlistRepository.countByFestivalIdIn(festivalIds)) {
+            result.put((Long) row[0], (Long) row[1]);
+        }
+        return result;
     }
 
     private int normalizePage(Integer page) {

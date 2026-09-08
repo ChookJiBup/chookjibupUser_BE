@@ -41,4 +41,14 @@ public class WishlistCommandService {
                     return true;
                 });
     }
+
+    /**
+     * 찜 목록 화면의 편집 모드(체크박스 다중 선택 → 일괄 삭제)에서 쓴다.
+     * 남의 찜을 지우지 못하게 userId 조건을 항상 같이 건다 — festivalId가 요청에
+     * 잘못 섞여 들어와도, 그 항목이 다른 사용자의 찜이면 그냥 조용히 무시된다.
+     */
+    public void deleteAll(Long userId, java.util.List<Long> festivalIds) {
+        if (festivalIds.isEmpty()) return;
+        wishlistRepository.deleteByUserIdAndFestivalIdIn(userId, festivalIds);
+    }
 }

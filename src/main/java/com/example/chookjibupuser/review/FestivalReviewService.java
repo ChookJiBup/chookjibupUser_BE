@@ -11,11 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 축제 리뷰(별점+한줄평) 작성/조회를 처리한다. review 도메인 자신의 저장소만 다룬다 —
- * festivalId가 실제 존재하는 축제인지, 리뷰를 쓰려는 userId가 실제 로그인한 사용자인지는
- * 이 서비스가 아니라 application 계층(UserReviewService)이 검증한다.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -49,6 +44,21 @@ public class FestivalReviewService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    /**
+     * 주어진 festivalId들 각각의 리뷰 개수를 반환한다. 리뷰가 하나도 없는 festivalId는
+     * 결과 맵에서 빠진다 — 호출하는 쪽에서 없으면 0으로 취급하면 된다.
+     */
+    public java.util.Map<Long, Long> getReviewCounts(java.util.List<Long> festivalIds) {
+        if (festivalIds.isEmpty()) {
+            return java.util.Map.of();
+        }
+        java.util.Map<Long, Long> result = new java.util.LinkedHashMap<>();
+        for (Object[] row : festivalReviewRepository.countByFestivalIdIn(festivalIds)) {
+            result.put((Long) row[0], (Long) row[1]);
+        }
+        return result;
     }
 
     private int normalizePage(Integer page) {

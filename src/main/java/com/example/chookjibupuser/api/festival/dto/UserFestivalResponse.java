@@ -1,4 +1,3 @@
-// api/festival/dto/UserFestivalResponse.java (전체)
 package com.example.chookjibupuser.api.festival.dto;
 
 import com.example.chookjibupuser.festival.dto.FestivalProgressStatus;
@@ -23,10 +22,17 @@ public record UserFestivalResponse(
         BigDecimal latitude,
         BigDecimal longitude,
         FestivalProgressStatus progressStatus,
-        boolean wishlisted
+        boolean wishlisted,
+        long wishlistCount,
+        long reviewCount
 ) {
 
-    public static UserFestivalResponse of(FestivalSummaryView view, boolean wishlisted) {
+    public static UserFestivalResponse of(
+            FestivalSummaryView view,
+            boolean wishlisted,
+            long wishlistCount,
+            long reviewCount
+    ) {
         return new UserFestivalResponse(
                 view.publicId(),
                 view.name(),
@@ -42,7 +48,9 @@ public record UserFestivalResponse(
                 view.latitude(),
                 view.longitude(),
                 view.progressStatus(),
-                wishlisted
+                wishlisted,
+                wishlistCount,
+                reviewCount
         );
     }
 }

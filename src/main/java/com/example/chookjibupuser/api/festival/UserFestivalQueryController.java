@@ -1,4 +1,3 @@
-// api/festival/UserFestivalQueryController.java (전체)
 package com.example.chookjibupuser.api.festival;
 
 import com.example.chookjibupuser.api.festival.dto.UserFestivalDetailResponse;
@@ -27,13 +26,14 @@ public class UserFestivalQueryController {
             + "로그인 상태로 호출하면 항목마다 wishlisted 여부가 채워집니다. "
             + "name으로 축제명 부분 일치 검색이 가능합니다(대소문자 무시). "
             + "status(ONGOING/UPCOMING/COMPLETED)로 진행 상태 필터가 가능합니다. "
+            + "region(시/도 이름, 예: 서울/경기/강원)으로 지역 필터가 가능하고 status와 같이 쓸 수 있습니다. "
             + "sort(WISHLIST_COUNT/REVIEW_COUNT)로 찜/리뷰 많은 순 정렬이 가능합니다(기본은 시작일순). "
-            + "name/status/sort는 서로 동시에 줄 수 없습니다. "
-            + "[임시] region(지역) 필터는 아직 없습니다.")
+            + "name, sort는 status/region과 동시에 줄 수 없습니다(각각 검색 화면 / 홈 정렬 전용).")
     @GetMapping
     public ApiResponse<UserFestivalPageResponse> getFestivals(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String region,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
@@ -42,6 +42,7 @@ public class UserFestivalQueryController {
         UserFestivalPageResponse response = userFestivalService.getFestivals(
                 name,
                 status,
+                region,
                 sort,
                 page,
                 size,

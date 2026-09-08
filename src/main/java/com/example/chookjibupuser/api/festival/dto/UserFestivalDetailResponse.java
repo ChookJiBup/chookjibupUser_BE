@@ -1,4 +1,3 @@
-// api/festival/dto/UserFestivalDetailResponse.java (전체)
 package com.example.chookjibupuser.api.festival.dto;
 
 import com.example.chookjibupuser.festival.dto.FestivalDetailView;
@@ -15,13 +14,20 @@ public record UserFestivalDetailResponse(
         String content, String phoneNumber, String homepageUrl,
         BigDecimal latitude, BigDecimal longitude,
         FestivalProgressStatus progressStatus,
-        boolean wishlisted, RoadmapResponse roadmap
+        boolean wishlisted, long wishlistCount, long reviewCount,
+        RoadmapResponse roadmap
 ) {
-    public static UserFestivalDetailResponse of(FestivalDetailView view, boolean wishlisted, RoadmapResponse roadmap) {
+    public static UserFestivalDetailResponse of(
+            FestivalDetailView view,
+            boolean wishlisted,
+            long wishlistCount,
+            long reviewCount,
+            RoadmapResponse roadmap
+    ) {
         return new UserFestivalDetailResponse(view.publicId(), view.name(), view.eventPlace(), view.address(),
                 view.detailAddress(), view.startDate(), view.endDate(), view.operationStartTime(),
                 view.operationEndTime(), view.content(), view.phoneNumber(), view.homepageUrl(),
                 view.latitude(), view.longitude(),
-                view.progressStatus(), wishlisted, roadmap);
+                view.progressStatus(), wishlisted, wishlistCount, reviewCount, roadmap);
     }
 }
