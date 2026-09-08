@@ -2,8 +2,13 @@
 package com.example.chookjibupuser.roadmap;
 
 import com.example.chookjibupuser.roadmap.dto.NodeView;
+import com.example.chookjibupuser.roadmap.dto.PresentationView;
 import com.example.chookjibupuser.roadmap.dto.RoadmapView;
 import com.example.chookjibupuser.roadmap.dto.ZoneView;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -24,7 +29,9 @@ public class RoadmapQueryService {
     private final FestivalRoadmapRepository festivalRoadmapRepository;
     private final RoadmapNodeRepository roadmapNodeRepository;
     private final FestivalMapRepository festivalMapRepository;
+    private final FestivalMapPresentationRepository presentationRepository;
     private final MapImageProperties mapImageProperties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** @return 로드맵이 없거나 아직 PUBLISHED 안 됐으면 null. */
     public RoadmapView getRoadmap(Long festivalId) {
@@ -47,7 +54,13 @@ public class RoadmapQueryService {
         List<NodeView> otherNodes = confirmedNodes.stream()
                 .filter(node -> !node.isBooth()).map(NodeView::of).toList();
 
-        return new RoadmapView(roadmap.getPublicId(), resolveMapImageUrl(festivalId), zones, otherNodes);
+        return new RoadmapView(
+                roadmap.getPublicId(),
+                resolveMapImageUrl(festivalId),
+                zones,
+                otherNodes,
+                resolvePresentation(festivalId)
+        );
     }
 
     private ZoneView toZoneView(RoadmapZone zone, Map<UUID, NodeView> boothsByPublicId) {
@@ -67,5 +80,88 @@ public class RoadmapQueryService {
                 .filter(StringUtils::hasText)
                 .map(key -> mapImageProperties.imageBaseUrl().replaceAll("/+$", "") + "/" + key)
                 .orElse(null);
+    }
+
+    /**
+     * 관리자가 맞춰 둔 부지 경계와 팜플렛을 그릴 수 있는 형태로 옮긴다.
+     *
+     * <p>표시 설정이 없거나 팜플렛이 꺼져 있으면 그 부분만 빠진다. 지도 자체는 부스만으로도
+     * 그릴 수 있으므로, 여기서 문제가 생겨도 로드맵 전체를 막지 않는다.</p>
+     */
+    private PresentationView resolvePresentation(Long festivalId) {
+        FestivalMapPresentation presentation = festivalMapRepository.findByFestivalId(festivalId)
+                .flatMap(map -> presentationRepository.findByMapId(map.getId()))
+                .orElse(null);
+        if (presentation == null) {
+            return null;
+        }
+        List<PresentationView.LatLngView> boundary = readBoundary(presentation);
+        PresentationView.OverlayView overlay = readOverlay(presentation);
+        if (boundary == null && overlay == null) {
+            return null;
+        }
+        return new PresentationView(boundary, overlay);
+    }
+
+    private List<PresentationView.LatLngView> readBoundary(FestivalMapPresentation presentation) {
+        if (!StringUtils.hasText(presentation.getBoundaryGeometry())) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(presentation.getBoundaryGeometry());
+            JsonNode points = root.get("points");
+            if (points == null || !points.isArray() || points.size() < 3) {
+                return null;
+            }
+            List<PresentationView.LatLngView> parsed = new ArrayList<>();
+            for (JsonNode point : points) {
+                JsonNode lat = point.get("lat");
+                JsonNode lng = point.get("lng");
+                if (lat == null || lng == null || !lat.isNumber() || !lng.isNumber()) {
+                    return null;
+                }
+                parsed.add(new PresentationView.LatLngView(
+                        lat.decimalValue(),
+                        lng.decimalValue()
+                ));
+            }
+            return parsed;
+        } catch (Exception exception) {
+            // 경계 JSON이 깨졌다고 지도 전체를 막지는 않는다.
+            return null;
+        }
+    }
+
+    private PresentationView.OverlayView readOverlay(FestivalMapPresentation presentation) {
+        MapOverlayProjection.Corners corners = MapOverlayProjection.corners(presentation);
+        if (corners == null) {
+            return null;
+        }
+        String imageUrl = resolveImageUrl(presentation.getOverlayImageKey());
+        if (imageUrl == null) {
+            return null;
+        }
+        BigDecimal opacity = presentation.getOverlayOpacity() == null
+                ? BigDecimal.ONE
+                : presentation.getOverlayOpacity();
+        return new PresentationView.OverlayView(
+                imageUrl,
+                presentation.getOverlayImageWidth(),
+                presentation.getOverlayImageHeight(),
+                corners.topLeft(),
+                corners.topRight(),
+                corners.bottomRight(),
+                corners.bottomLeft(),
+                opacity,
+                presentation.isClipToBoundary()
+        );
+    }
+
+    private String resolveImageUrl(String objectKey) {
+        if (!StringUtils.hasText(mapImageProperties.imageBaseUrl())
+                || !StringUtils.hasText(objectKey)) {
+            return null;
+        }
+        return mapImageProperties.imageBaseUrl().replaceAll("/+$", "") + "/" + objectKey;
     }
 }
