@@ -65,6 +65,10 @@ public class Festival {
     @Column(name = "homepage_url")
     private String homepageUrl;
 
+    /** 공개 포스터 이미지 URL. 이미지가 없는 기존 축제는 null이다. */
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
+
     // ── 공통 컬럼 ──
     @Column(name = "festival_name")
     private String festivalName;

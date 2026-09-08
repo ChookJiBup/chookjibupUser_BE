@@ -18,6 +18,7 @@ import java.util.UUID;
 public record MyWishlistFestivalResponse(
         UUID festivalPublicId,
         String name,
+        String imageUrl,
         String eventPlace,
         String address,
         LocalDate startDate,
@@ -37,6 +38,7 @@ public record MyWishlistFestivalResponse(
         return new MyWishlistFestivalResponse(
                 festival.publicId(),
                 festival.name(),
+                festival.imageUrl(),
                 festival.eventPlace(),
                 festival.address(),
                 festival.startDate(),

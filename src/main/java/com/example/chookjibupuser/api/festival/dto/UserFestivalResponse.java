@@ -10,6 +10,7 @@ import java.util.UUID;
 public record UserFestivalResponse(
         UUID publicId,
         String name,
+        String imageUrl,
         String eventPlace,
         String address,
         String detailAddress,
@@ -36,6 +37,7 @@ public record UserFestivalResponse(
         return new UserFestivalResponse(
                 view.publicId(),
                 view.name(),
+                view.imageUrl(),
                 view.eventPlace(),
                 view.address(),
                 view.detailAddress(),
