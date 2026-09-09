@@ -36,18 +36,23 @@ public class RoadmapQueryService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 축제 부스지도.
+     * 축제 부스지도. 로드맵 상태가 {@code PUBLISHED}일 때만 내려준다.
      *
-     * <p>예전에는 로드맵이 {@code PUBLISHED}일 때만 내려줬는데, 관리자 쪽에 그 상태로 올리는
-     * 경로가 아예 없어 방문객은 어떤 축제의 부스지도도 볼 수 없었다. 관리자가 저장한 지도를
-     * 그대로 보여 준다. AI가 찾아만 둔 초안 노드는 아래 {@code isConfirmed} 필터가 계속
-     * 걸러내므로, 나가는 것은 관리자가 확인한 노드뿐이다.</p>
+     * <p>한동안은 상태를 보지 않고 저장된 지도를 그대로 내려줬다. 관리자 콘솔에 로드맵을
+     * {@code PUBLISHED}로 올리는 경로가 아예 없어서, 게이트를 켜 두면 방문객이 어떤 축제의
+     * 부스지도도 볼 수 없었기 때문이다. 지금은 관리자 콘솔에 「방문객에게 공개」/「공개 해제」
+     * 토글이 생겼고 저장해도 공개 상태가 유지되므로, 다시 상태를 보고 내려준다. 관리자가
+     * 아직 검토 중인 배치가 방문객 화면에 먼저 나가지 않게 하려는 것이다.</p>
      *
-     * @return 로드맵이 없으면 null.
+     * <p>AI가 찾아만 둔 초안 노드는 아래 {@code isConfirmed} 필터가 걸러내므로, 공개된
+     * 로드맵에서도 나가는 것은 관리자가 확인한 노드뿐이다.</p>
+     *
+     * @return 로드맵이 없거나 아직 공개되지 않았으면 null. 축제 상세 응답의 roadmap이 null이 되고,
+     *         방문객 화면은 「아직 배치도가 공개되지 않았어요」를 보여 준다.
      */
     public RoadmapView getRoadmap(Long festivalId) {
         FestivalRoadmap roadmap = festivalRoadmapRepository.findByFestivalId(festivalId).orElse(null);
-        if (roadmap == null) {
+        if (roadmap == null || roadmap.getStatus() != RoadmapStatus.PUBLISHED) {
             return null;
         }
 
