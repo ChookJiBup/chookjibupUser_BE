@@ -35,6 +35,7 @@ class RoadmapQueryServiceTest {
     );
 
     private static final long FESTIVAL_ID = 7L;
+    private static final long CURRENT_MAP_ID = 75L;
 
     @Test
     void 로드맵이_없으면_null을_내려준다() {
@@ -60,7 +61,7 @@ class RoadmapQueryServiceTest {
         List<RoadmapNode> nodes = List.of(confirmedBooth());
         when(festivalRoadmapRepository.findByFestivalId(FESTIVAL_ID)).thenReturn(Optional.of(roadmap));
         when(roadmapNodeRepository.findByRoadmapIdOrderBySortOrderAsc(roadmap.getId())).thenReturn(nodes);
-        when(festivalMapRepository.findByFestivalId(FESTIVAL_ID)).thenReturn(Optional.empty());
+        when(festivalMapRepository.findById(CURRENT_MAP_ID)).thenReturn(Optional.empty());
 
         RoadmapView view = roadmapQueryService.getRoadmap(FESTIVAL_ID);
 
@@ -70,12 +71,45 @@ class RoadmapQueryServiceTest {
         assertEquals(1, view.zones().get(0).booths().size());
     }
 
+    /**
+     * 지도를 한 번이라도 교체하면 {@code festival_maps}에 예전 판이 남아 축제당 행이 여러 개가 된다.
+     * 축제로 지도를 찾으면 그런 축제에서 결과 개수 예외가 나므로, 로드맵이 가리키는 지도만 집는다.
+     */
+    @Test
+    void 지도를_교체한_축제도_로드맵이_가리키는_지도만_본다() {
+        FestivalRoadmap roadmap = roadmap(RoadmapStatus.PUBLISHED);
+        FestivalMap currentMap = mock(FestivalMap.class);
+        when(currentMap.getId()).thenReturn(CURRENT_MAP_ID);
+        when(currentMap.getDisplayImageKey()).thenReturn("maps/current.png");
+        when(festivalRoadmapRepository.findByFestivalId(FESTIVAL_ID)).thenReturn(Optional.of(roadmap));
+        when(roadmapNodeRepository.findByRoadmapIdOrderBySortOrderAsc(roadmap.getId())).thenReturn(List.of());
+        when(festivalMapRepository.findById(CURRENT_MAP_ID)).thenReturn(Optional.of(currentMap));
+        when(presentationRepository.findByMapId(CURRENT_MAP_ID)).thenReturn(Optional.empty());
+
+        RoadmapView view = mapImageAwareService().getRoadmap(FESTIVAL_ID);
+
+        assertNotNull(view);
+        assertEquals("https://cdn.example.com/maps/current.png", view.mapImageUrl());
+    }
+
+    /** 지도 이미지 URL까지 확인하려면 image-base-url이 채워진 서비스가 필요하다. */
+    private RoadmapQueryService mapImageAwareService() {
+        return new RoadmapQueryService(
+                festivalRoadmapRepository,
+                roadmapNodeRepository,
+                festivalMapRepository,
+                presentationRepository,
+                new MapImageProperties("https://cdn.example.com/")
+        );
+    }
+
     private FestivalRoadmap roadmap(RoadmapStatus status) {
         FestivalRoadmap roadmap = mock(FestivalRoadmap.class);
         when(roadmap.getId()).thenReturn(1L);
         when(roadmap.getPublicId()).thenReturn(UUID.randomUUID());
         when(roadmap.getStatus()).thenReturn(status);
         when(roadmap.getZones()).thenReturn(List.of());
+        when(roadmap.getCurrentMapId()).thenReturn(CURRENT_MAP_ID);
         return roadmap;
     }
 

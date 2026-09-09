@@ -17,8 +17,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserFestivalService {
@@ -72,9 +74,37 @@ public class UserFestivalService {
         long wishlistCount = wishlistQueryService.getWishlistCounts(singleId).getOrDefault(festivalId, 0L);
         long reviewCount = festivalReviewService.getReviewCounts(singleId).getOrDefault(festivalId, 0L);
 
-        RoadmapView roadmapView = roadmapQueryService.getRoadmap(festivalId);
-        RoadmapResponse roadmap = roadmapView == null ? null : RoadmapResponse.from(roadmapView);
+        return UserFestivalDetailResponse.of(
+                detail,
+                wishlisted,
+                wishlistCount,
+                reviewCount,
+                readRoadmapOrNull(festivalId, festivalPublicId)
+        );
+    }
 
-        return UserFestivalDetailResponse.of(detail, wishlisted, wishlistCount, reviewCount, roadmap);
+    /**
+     * 부스지도를 읽는다. 실패하면 배치도만 포기하고 나머지 축제 정보는 그대로 내려준다.
+     *
+     * <p>배치도 한 장이 깨졌다고 축제 상세가 통째로 500이 나면 방문객은 축제 이름조차 못 본다.
+     * 실제로 지도를 한 번 교체한 축제 3개에서 상세 API가 전부 죽어 있었다. 배치도는 축제 상세의
+     * 부가 정보이므로, 여기서 삼키고 「아직 배치도가 공개되지 않았어요」로 보이게 둔다.</p>
+     *
+     * <p>다만 조용히 삼키면 같은 문제가 또 묻힌다. 어느 축제에서 무엇 때문에 실패했는지
+     * 경고 로그로 남긴다.</p>
+     */
+    private RoadmapResponse readRoadmapOrNull(Long festivalId, UUID festivalPublicId) {
+        try {
+            RoadmapView roadmapView = roadmapQueryService.getRoadmap(festivalId);
+            return roadmapView == null ? null : RoadmapResponse.from(roadmapView);
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "부스지도를 읽지 못해 축제 상세에서 제외합니다. festivalId={}, festivalPublicId={}",
+                    festivalId,
+                    festivalPublicId,
+                    exception
+            );
+            return null;
+        }
     }
 }

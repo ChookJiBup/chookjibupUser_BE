@@ -23,6 +23,7 @@ public enum ErrorCode {
 
     FORBIDDEN(40300, HttpStatus.FORBIDDEN, "권한이 없습니다."),
 
+    NOT_FOUND(40400, HttpStatus.NOT_FOUND, "요청하신 경로를 찾을 수 없습니다."),
     USER_NOT_FOUND(40401, HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     FESTIVAL_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "축제를 찾을 수 없습니다."),
     AUTH_EMAIL_VERIFICATION_NOT_FOUND(40403, HttpStatus.NOT_FOUND, "인증번호를 먼저 요청해주세요."),

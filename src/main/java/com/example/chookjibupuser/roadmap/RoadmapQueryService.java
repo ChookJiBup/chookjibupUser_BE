@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,13 +85,31 @@ public class RoadmapQueryService {
         List<NodeView> otherNodes = confirmedNodes.stream()
                 .filter(node -> !node.isBooth()).map(NodeView::of).toList();
 
+        FestivalMap currentMap = findCurrentMap(roadmap);
+
         return new RoadmapView(
                 roadmap.getPublicId(),
-                resolveMapImageUrl(festivalId),
+                resolveMapImageUrl(currentMap),
                 zones,
                 otherNodes,
-                resolvePresentation(festivalId)
+                resolvePresentation(currentMap)
         );
+    }
+
+    /**
+     * 로드맵이 지금 쓰고 있는 지도 한 장.
+     *
+     * <p>축제로 지도를 찾으면 안 된다. {@code festival_maps}는 지도를 교체해도 예전 판을
+     * {@code REPLACED}로 남겨 두는 이력 테이블이라, 한 번이라도 배치도를 갈아끼운 축제는
+     * 축제당 행이 여러 개다. 그런 축제에서 축제 단위 단건 조회가 결과 개수 예외로 터지면서
+     * 축제 상세 API가 통째로 500이 됐다. 로드맵이 가리키는 {@code currentMapId}로 집으면
+     * 이력이 몇 장이든 지금 판 하나만 나온다.</p>
+     */
+    private FestivalMap findCurrentMap(FestivalRoadmap roadmap) {
+        if (roadmap.getCurrentMapId() == null) {
+            return null;
+        }
+        return festivalMapRepository.findById(roadmap.getCurrentMapId()).orElse(null);
     }
 
     private ZoneView toZoneView(RoadmapZone zone, Map<UUID, NodeView> boothsByPublicId) {
@@ -103,15 +120,11 @@ public class RoadmapQueryService {
         return new ZoneView(zone.zoneId(), zone.name(), zone.sortOrder(), booths);
     }
 
-    private String resolveMapImageUrl(Long festivalId) {
-        if (!StringUtils.hasText(mapImageProperties.imageBaseUrl())) {
+    private String resolveMapImageUrl(FestivalMap currentMap) {
+        if (currentMap == null) {
             return null;
         }
-        return festivalMapRepository.findByFestivalId(festivalId)
-                .map(FestivalMap::getDisplayImageKey)
-                .filter(StringUtils::hasText)
-                .map(key -> mapImageProperties.imageBaseUrl().replaceAll("/+$", "") + "/" + key)
-                .orElse(null);
+        return resolveImageUrl(currentMap.getDisplayImageKey());
     }
 
     /**
@@ -120,9 +133,11 @@ public class RoadmapQueryService {
      * <p>표시 설정이 없거나 팜플렛이 꺼져 있으면 그 부분만 빠진다. 지도 자체는 부스만으로도
      * 그릴 수 있으므로, 여기서 문제가 생겨도 로드맵 전체를 막지 않는다.</p>
      */
-    private PresentationView resolvePresentation(Long festivalId) {
-        FestivalMapPresentation presentation = festivalMapRepository.findByFestivalId(festivalId)
-                .flatMap(map -> presentationRepository.findByMapId(map.getId()))
+    private PresentationView resolvePresentation(FestivalMap currentMap) {
+        if (currentMap == null) {
+            return null;
+        }
+        FestivalMapPresentation presentation = presentationRepository.findByMapId(currentMap.getId())
                 .orElse(null);
         if (presentation == null) {
             return null;
