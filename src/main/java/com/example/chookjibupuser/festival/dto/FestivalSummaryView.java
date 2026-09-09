@@ -26,7 +26,11 @@ public record FestivalSummaryView(
         FestivalProgressStatus progressStatus
 ) {
 
-    public static FestivalSummaryView of(Festival festival) {
+    /**
+     * @param today 서비스 기준 시간대(Asia/Seoul)의 오늘 날짜. 진행 상태 계산의 기준이며,
+     *              서버 기본 시간대에 좌우되지 않도록 호출하는 쪽에서 넘겨준다.
+     */
+    public static FestivalSummaryView of(Festival festival, LocalDate today) {
         return new FestivalSummaryView(
                 festival.getFestivalId(),
                 festival.getPublicId(),
@@ -43,7 +47,7 @@ public record FestivalSummaryView(
                 festival.getHomepageUrl(),
                 festival.getLatitude(),
                 festival.getLongitude(),
-                FestivalProgressStatus.from(LocalDate.now(), festival.getStartDate(), festival.getEndDate())
+                FestivalProgressStatus.from(today, festival.getStartDate(), festival.getEndDate())
         );
     }
 }
