@@ -9,8 +9,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,8 +59,24 @@ public class RoadmapQueryService {
                 .filter(RoadmapNode::isBooth)
                 .collect(java.util.stream.Collectors.toMap(RoadmapNode::getPublicId, NodeView::of));
 
-        List<ZoneView> zones = roadmap.getZones().stream()
-                .map(zone -> toZoneView(zone, boothsByPublicId)).toList();
+        List<ZoneView> zones = new ArrayList<>(roadmap.getZones().stream()
+                .map(zone -> toZoneView(zone, boothsByPublicId)).toList());
+        /*
+          구역에 묶이지 않은 부스는 어디에도 담기지 못해 방문객 화면에서 통째로 사라졌다.
+          관리자가 지도에 찍기만 하고 구역으로 묶지 않은 부스가 그렇다. 남는 부스는
+          마지막에 «구역 미지정»으로 모아 보여 준다(관리자 대시보드와 같은 방식).
+        */
+        Set<UUID> zonedBoothIds = roadmap.getZones().stream()
+                .flatMap(zone -> zone.boothNodeIds().stream())
+                .collect(java.util.stream.Collectors.toSet());
+        List<NodeView> unzonedBooths = confirmedNodes.stream()
+                .filter(RoadmapNode::isBooth)
+                .filter(node -> !zonedBoothIds.contains(node.getPublicId()))
+                .map(NodeView::of)
+                .toList();
+        if (!unzonedBooths.isEmpty()) {
+            zones.add(new ZoneView(null, "구역 미지정", zones.size(), unzonedBooths));
+        }
 
         List<NodeView> otherNodes = confirmedNodes.stream()
                 .filter(node -> !node.isBooth()).map(NodeView::of).toList();
