@@ -11,6 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 축제 리뷰(별점+한줄평) 작성/조회를 처리한다. review 도메인 자신의 저장소만 다룬다 —
+ * festivalId가 실제 존재하는 축제인지, 리뷰를 쓰려는 userId가 실제 로그인한 사용자인지는
+ * 이 서비스가 아니라 application 계층(UserReviewService)이 검증한다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,9 +28,9 @@ public class FestivalReviewService {
     private final FestivalReviewRepository festivalReviewRepository;
 
     @Transactional
-    public ReviewView createReview(Long userId, Long festivalId, int rating, String content) {
+    public ReviewView createReview(Long userId, Long festivalId, int rating, String content, boolean onsite) {
         FestivalReview saved = festivalReviewRepository.save(
-                FestivalReview.create(userId, festivalId, rating, content)
+                FestivalReview.create(userId, festivalId, rating, content, onsite)
         );
         return ReviewView.of(saved);
     }

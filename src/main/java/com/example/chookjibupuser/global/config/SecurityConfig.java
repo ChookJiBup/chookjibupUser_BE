@@ -43,6 +43,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/email/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/festivals", "/api/festivals/**").permitAll()
+                        // 리뷰 작성은 원래 로그인 필수인데, 축제 현장 QR코드로 들어온 경우(onsite=true)는
+                        // 비로그인도 허용해야 해서 여기서 permitAll로 열어둔다 — "로그인 필요 여부"의
+                        // 실제 판단은 UserReviewService가 한다(일반 리뷰인데 비로그인이면 거기서 거부).
+                        .requestMatchers(HttpMethod.POST, "/api/festivals/*/reviews").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )

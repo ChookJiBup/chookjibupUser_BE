@@ -6,11 +6,8 @@ import com.example.chookjibupuser.api.review.dto.ReviewResponse;
 import com.example.chookjibupuser.application.review.UserReviewService;
 import com.example.chookjibupuser.auth.support.UserPrincipal;
 import com.example.chookjibupuser.global.response.ApiResponse;
-import com.example.chookjibupuser.global.response.CustomException;
-import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.global.response.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +21,10 @@ import java.util.UUID;
  * 축제 리뷰(별점+한줄평) 작성/조회 API이다. QR코드/프론트 URL은 축제의 public_id(UUID)를
  * 담고 있고, 그 값을 그대로 경로에 쓴다 — festival_id(내부 PK)는 노출하지 않는다.
  *
- * <p>QR을 찍고 이 화면까지 들어오는 흐름 자체는 프론트 책임이고, 여기는 리뷰 작성/조회
- * API만 제공한다.</p>
+ * <p>[중요] 리뷰 작성은 일반적으로 로그인이 필요하지만, 축제 현장 QR코드로 들어온
+ * 경우(onsite=true)는 비로그인도 허용한다 — 그래서 이 엔드포인트는 SecurityConfig에서
+ * permitAll로 열어두고, 실제 "로그인 필요 여부" 판단은 UserReviewService가 한다
+ * (userId가 null인데 onsite가 false면 거기서 거부한다).</p>
  */
 @Tag(name = "User Review", description = "축제 리뷰(별점+한줄평) API")
 @RestController
@@ -35,8 +34,9 @@ public class UserReviewController {
 
     private final UserReviewService userReviewService;
 
-    @Operation(summary = "리뷰 작성", description = "별점(1~5)과 한줄평을 남깁니다. 로그인이 필요합니다.")
-    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "리뷰 작성", description = "별점(1~5)과 한줄평을 남깁니다. "
+            + "일반 리뷰는 로그인이 필요합니다. 축제 현장 QR코드로 들어온 경우(onsite=true)는 "
+            + "로그인 없이도 작성할 수 있습니다.")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ApiResponse<ReviewResponse> createReview(
@@ -46,7 +46,7 @@ public class UserReviewController {
     ) {
         ReviewResponse response = userReviewService.createReview(
                 festivalPublicId,
-                requireUserId(principal),
+                principal == null ? null : principal.userId(),
                 request
         );
         return ApiResponse.success(SuccessCode.REVIEW_CREATE_SUCCESS, response);
@@ -63,12 +63,5 @@ public class UserReviewController {
                 SuccessCode.REVIEW_READ_SUCCESS,
                 userReviewService.getReviews(festivalPublicId, page, size)
         );
-    }
-
-    private Long requireUserId(UserPrincipal principal) {
-        if (principal == null) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
-        }
-        return principal.userId();
     }
 }
