@@ -143,4 +143,18 @@ public class UserAccount {
     public boolean isEmailLogin() {
         return LOGIN_TYPE_EMAIL.equals(this.loginType);
     }
+
+    /**
+     * 비밀번호 재설정에서만 호출된다. 이메일 로그인 계정이 아니면(카카오 계정) 바꿀
+     * 비밀번호 자체가 없으므로 호출하는 쪽(PasswordResetRequestService)이 미리 걸러야
+     * 한다 — 이 메서드 자체는 그 검증을 하지 않는다(이미 걸러졌다고 가정).
+     *
+     * @param newPasswordHash 평문이 아니라 이미 해싱된 값이어야 한다 (PasswordEncoder.encode 결과).
+     */
+    public void changePassword(String newPasswordHash) {
+        if (newPasswordHash == null || newPasswordHash.isBlank()) {
+            throw new IllegalArgumentException("newPasswordHash는 필수입니다.");
+        }
+        this.passwordHash = newPasswordHash;
+    }
 }

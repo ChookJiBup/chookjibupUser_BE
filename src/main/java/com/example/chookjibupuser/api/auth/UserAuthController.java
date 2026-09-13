@@ -4,7 +4,9 @@ import com.example.chookjibupuser.api.auth.dto.*;
 import com.example.chookjibupuser.auth.command.application.EmailLoginService;
 import com.example.chookjibupuser.auth.command.application.EmailSignupService;
 import com.example.chookjibupuser.auth.command.application.EmailVerificationRequestService;
+import com.example.chookjibupuser.auth.command.application.FindEmailService;
 import com.example.chookjibupuser.auth.command.application.KakaoLoginService;
+import com.example.chookjibupuser.auth.command.application.PasswordResetRequestService;
 import com.example.chookjibupuser.auth.command.infrastructure.JwtTokenProvider;
 import com.example.chookjibupuser.auth.support.UserAuthCookieService;
 import com.example.chookjibupuser.auth.support.UserPrincipal;
@@ -45,6 +47,8 @@ public class UserAuthController {
     private final EmailVerificationRequestService emailVerificationRequestService;
     private final EmailSignupService emailSignupService;
     private final EmailLoginService emailLoginService;
+    private final PasswordResetRequestService passwordResetRequestService;
+    private final FindEmailService findEmailService;
     private final UserAuthCookieService authCookieService;
     private final UserAccountRepository userAccountRepository;
     private final JwtTokenProvider jwtTokenProvider;
@@ -92,6 +96,30 @@ public class UserAuthController {
     @PostMapping("/email/login")
     public ResponseEntity<ApiResponse<UserSessionResponse>> emailLogin(@Valid @RequestBody EmailLoginRequest request) {
         return authenticatedResponse(SuccessCode.USER_EMAIL_LOGIN_SUCCESS, emailLoginService.login(request));
+    }
+
+    @Operation(summary = "아이디(이메일) 찾기", description = "이름(회원가입 때 입력한 닉네임)과 생년월일로 "
+            + "가입한 이메일을 찾습니다. 개인정보 보호를 위해 이메일 일부를 가린 채로 돌려줍니다(예: ab***@gmail.com). "
+            + "카카오 로그인 계정은 대상이 아닙니다(이메일+비밀번호 로그인 개념이 없음).")
+    @PostMapping("/email/find-email")
+    public ApiResponse<FindEmailResponse> findEmail(@Valid @RequestBody FindEmailRequest request) {
+        return ApiResponse.success(SuccessCode.AUTH_FIND_EMAIL_SUCCESS, findEmailService.findEmail(request));
+    }
+
+    @Operation(summary = "비밀번호 재설정 링크 발송", description = "가입된 이메일(이메일/비밀번호 계정만)로 "
+            + "비밀번호를 새로 설정할 수 있는 링크를 보냅니다. 링크는 30분간, 1회만 유효합니다.")
+    @PostMapping("/email/password-reset/request")
+    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequestRequest request) {
+        passwordResetRequestService.requestReset(request.email());
+        return ApiResponse.success(SuccessCode.AUTH_PASSWORD_RESET_REQUESTED);
+    }
+
+    @Operation(summary = "비밀번호 재설정 확정", description = "이메일로 받은 링크의 token과 새 비밀번호로 "
+            + "실제 비밀번호를 바꿉니다. 로그인 여부와 무관하게(비회원도) 호출할 수 있습니다.")
+    @PostMapping("/email/password-reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        passwordResetRequestService.confirmReset(request.token(), request.newPassword(), request.newPasswordConfirm());
+        return ApiResponse.success(SuccessCode.AUTH_PASSWORD_RESET_SUCCESS);
     }
 
     @Operation(summary = "현재 사용자 세션 조회")

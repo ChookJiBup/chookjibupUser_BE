@@ -14,6 +14,9 @@ public enum ErrorCode {
     AUTH_EMAIL_VERIFICATION_EXPIRED(40005, HttpStatus.BAD_REQUEST, "인증번호가 만료되었습니다. 다시 요청해주세요."),
     AUTH_EMAIL_VERIFICATION_TOO_MANY_ATTEMPTS(40006, HttpStatus.BAD_REQUEST, "인증 시도 횟수를 초과했습니다. 다시 요청해주세요."),
     AUTH_EMAIL_NOT_VERIFIED(40007, HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
+    AUTH_PASSWORD_RESET_TOKEN_EXPIRED(40008, HttpStatus.BAD_REQUEST, "링크가 만료되었습니다. 다시 요청해주세요."),
+    AUTH_PASSWORD_RESET_TOKEN_ALREADY_USED(40009, HttpStatus.BAD_REQUEST, "이미 사용된 링크입니다. 다시 요청해주세요."),
+    AUTH_PASSWORD_RESET_NOT_EMAIL_ACCOUNT(40010, HttpStatus.BAD_REQUEST, "카카오 로그인 계정은 비밀번호가 없어 재설정할 수 없습니다."),
 
     UNAUTHORIZED(40100, HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     AUTH_TOKEN_INVALID(40103, HttpStatus.UNAUTHORIZED, "유효하지 않은 인증 토큰입니다."),
@@ -27,6 +30,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(40401, HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     FESTIVAL_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "축제를 찾을 수 없습니다."),
     AUTH_EMAIL_VERIFICATION_NOT_FOUND(40403, HttpStatus.NOT_FOUND, "인증번호를 먼저 요청해주세요."),
+    AUTH_PASSWORD_RESET_TOKEN_NOT_FOUND(40404, HttpStatus.NOT_FOUND, "유효하지 않은 링크입니다."),
 
     AUTH_EMAIL_ALREADY_REGISTERED(40901, HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
 
