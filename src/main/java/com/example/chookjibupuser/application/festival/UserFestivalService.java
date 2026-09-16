@@ -67,12 +67,22 @@ public class UserFestivalService {
 
     public UserFestivalDetailResponse getFestivalDetail(UUID festivalPublicId, Long userId) {
         Long festivalId = festivalQueryService.getFestivalIdByPublicId(festivalPublicId);
+
+        festivalQueryService.incrementViewCount(festivalId);
+
         FestivalDetailView detail = festivalQueryService.getFestival(festivalId);
+
         boolean wishlisted = wishlistQueryService.isWishlisted(userId, festivalId);
 
         List<Long> singleId = List.of(festivalId);
-        long wishlistCount = wishlistQueryService.getWishlistCounts(singleId).getOrDefault(festivalId, 0L);
-        long reviewCount = festivalReviewService.getReviewCounts(singleId).getOrDefault(festivalId, 0L);
+
+        long wishlistCount = wishlistQueryService
+                .getWishlistCounts(singleId)
+                .getOrDefault(festivalId, 0L);
+
+        long reviewCount = festivalReviewService
+                .getReviewCounts(singleId)
+                .getOrDefault(festivalId, 0L);
 
         return UserFestivalDetailResponse.of(
                 detail,

@@ -94,7 +94,8 @@ class UserFestivalServiceTest {
                 null,
                 null,
                 null,
-                FestivalProgressStatus.COMPLETED
+                FestivalProgressStatus.COMPLETED,
+                1L
         );
     }
 }

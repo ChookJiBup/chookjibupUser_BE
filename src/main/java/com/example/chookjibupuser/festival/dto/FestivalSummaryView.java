@@ -23,7 +23,8 @@ public record FestivalSummaryView(
         String homepageUrl,
         BigDecimal latitude,
         BigDecimal longitude,
-        FestivalProgressStatus progressStatus
+        FestivalProgressStatus progressStatus,
+        Long viewCount
 ) {
 
     /**
@@ -47,7 +48,8 @@ public record FestivalSummaryView(
                 festival.getHomepageUrl(),
                 festival.getLatitude(),
                 festival.getLongitude(),
-                FestivalProgressStatus.from(today, festival.getStartDate(), festival.getEndDate())
+                FestivalProgressStatus.from(today, festival.getStartDate(), festival.getEndDate()),
+                festival.getViewCount()
         );
     }
 }

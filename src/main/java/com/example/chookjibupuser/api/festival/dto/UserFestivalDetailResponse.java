@@ -9,14 +9,31 @@ import java.util.UUID;
 
 /** roadmap은 관리자가 PUBLISHED 해둔 경우에만 채워지고, 아니면 null. */
 public record UserFestivalDetailResponse(
-        UUID publicId, String name, String imageUrl, String eventPlace, String address, String detailAddress,
-        LocalDate startDate, LocalDate endDate, LocalTime operationStartTime, LocalTime operationEndTime,
-        String content, String phoneNumber, String homepageUrl,
-        BigDecimal latitude, BigDecimal longitude,
+        UUID publicId,
+        String name,
+        String imageUrl,
+        String eventPlace,
+        String address,
+        String detailAddress,
+        LocalDate startDate,
+        LocalDate endDate,
+        LocalTime operationStartTime,
+        LocalTime operationEndTime,
+        String content,
+        String phoneNumber,
+        String homepageUrl,
+        BigDecimal latitude,
+        BigDecimal longitude,
         FestivalProgressStatus progressStatus,
-        boolean wishlisted, long wishlistCount, long reviewCount,
+
+        boolean wishlisted,
+        long wishlistCount,
+        long reviewCount,
+        long viewCount,
+
         RoadmapResponse roadmap
 ) {
+
     public static UserFestivalDetailResponse of(
             FestivalDetailView view,
             boolean wishlisted,
@@ -24,10 +41,30 @@ public record UserFestivalDetailResponse(
             long reviewCount,
             RoadmapResponse roadmap
     ) {
-        return new UserFestivalDetailResponse(view.publicId(), view.name(), view.imageUrl(), view.eventPlace(), view.address(),
-                view.detailAddress(), view.startDate(), view.endDate(), view.operationStartTime(),
-                view.operationEndTime(), view.content(), view.phoneNumber(), view.homepageUrl(),
-                view.latitude(), view.longitude(),
-                view.progressStatus(), wishlisted, wishlistCount, reviewCount, roadmap);
+        return new UserFestivalDetailResponse(
+                view.publicId(),
+                view.name(),
+                view.imageUrl(),
+                view.eventPlace(),
+                view.address(),
+                view.detailAddress(),
+                view.startDate(),
+                view.endDate(),
+                view.operationStartTime(),
+                view.operationEndTime(),
+                view.content(),
+                view.phoneNumber(),
+                view.homepageUrl(),
+                view.latitude(),
+                view.longitude(),
+                view.progressStatus(),
+
+                wishlisted,
+                wishlistCount,
+                reviewCount,
+                view.viewCount(),
+
+                roadmap
+        );
     }
 }

@@ -1,4 +1,4 @@
-// festival/Festival.java (전체)
+// festival/Festival.java
 package com.example.chookjibupuser.festival;
 
 import com.example.chookjibupuser.festival.dto.FestivalPublicationStatus;
@@ -84,6 +84,9 @@ public class Festival {
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Column(name = "view_count", nullable = false)
+    private Long viewCount = 0L;
 
     // 지도(HOME02) 마커 표시용. 파이프라인이 공공데이터 API에서 받아 채운다 —
     // 관리자가 수동 등록한 축제는 대부분 null일 수 있다.

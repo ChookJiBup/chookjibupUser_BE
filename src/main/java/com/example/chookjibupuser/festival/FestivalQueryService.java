@@ -48,17 +48,29 @@ public class FestivalQueryService {
             Integer page,
             Integer size
     ) {
-        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
+        Pageable pageable = PageRequest.of(
+                normalizePage(page),
+                normalizeSize(size)
+        );
+
         LocalDate today = today();
 
         Page<Festival> result;
+
         if (name != null && !name.isBlank()) {
-            result = festivalRepository.findByFestivalNameContainingIgnoreCaseOrderByStartDateAscFestivalIdAsc(
-                    name.trim(), pageable
-            );
+
+            result = festivalRepository
+                    .findByFestivalNameContainingIgnoreCaseOrderByStartDateAscFestivalIdAsc(
+                            name.trim(),
+                            pageable
+                    );
+
         } else {
+
             result = festivalRepository.findByRegionAndStatusAndSort(
-                    region != null && !region.isBlank() ? region.trim() : null,
+                    region != null && !region.isBlank()
+                            ? region.trim()
+                            : null,
                     normalizeStatus(status),
                     normalizeSort(sort),
                     today,
@@ -67,7 +79,10 @@ public class FestivalQueryService {
         }
 
         return new FestivalPageView(
-                result.getContent().stream().map(festival -> FestivalSummaryView.of(festival, today)).toList(),
+                result.getContent()
+                        .stream()
+                        .map(festival -> FestivalSummaryView.of(festival, today))
+                        .toList(),
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
@@ -85,11 +100,18 @@ public class FestivalQueryService {
     }
 
     private String normalizeSort(String sort) {
-        if (sort == null || sort.isBlank()) return null;
+        if (sort == null || sort.isBlank()) {
+            return null;
+        }
+
         String upper = sort.trim().toUpperCase();
-        if (!upper.equals("WISHLIST_COUNT") && !upper.equals("REVIEW_COUNT")) {
+
+        if (!upper.equals("WISHLIST_COUNT")
+                && !upper.equals("REVIEW_COUNT")
+                && !upper.equals("VIEW_COUNT")) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
+
         return upper;
     }
 
@@ -97,6 +119,15 @@ public class FestivalQueryService {
         Festival festival = festivalRepository.findById(festivalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FESTIVAL_NOT_FOUND));
         return FestivalDetailView.of(festival, today());
+    }
+
+    @Transactional
+    public void incrementViewCount(Long festivalId) {
+        int updatedRows = festivalRepository.incrementViewCount(festivalId);
+
+        if (updatedRows == 0) {
+            throw new CustomException(ErrorCode.FESTIVAL_NOT_FOUND);
+        }
     }
 
     public Map<Long, FestivalSummaryView> getFestivalsByIds(List<Long> festivalIds) {
