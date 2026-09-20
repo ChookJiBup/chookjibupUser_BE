@@ -21,6 +21,9 @@ public enum SuccessCode {
     WISHLIST_DELETE_SUCCESS(23003, "찜한 축제가 삭제되었습니다."),
     REVIEW_CREATE_SUCCESS(24000, "리뷰가 등록되었습니다."),
     REVIEW_READ_SUCCESS(24001, "리뷰 목록 조회가 완료되었습니다."),
+    MY_REVIEW_READ_SUCCESS(24002, "내가 쓴 리뷰 목록 조회가 완료되었습니다."),
+    REVIEW_UPDATE_SUCCESS(24003, "리뷰가 수정되었습니다."),
+    REVIEW_DELETE_SUCCESS(24004, "리뷰가 삭제되었습니다."),
     FESTIVAL_CONGESTION_READ_SUCCESS(25000, "축제 혼잡도 조회가 완료되었습니다.");
 
     private final int code;

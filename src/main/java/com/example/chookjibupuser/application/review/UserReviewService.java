@@ -1,12 +1,13 @@
 package com.example.chookjibupuser.application.review;
 
-import com.example.chookjibupuser.api.review.dto.ReviewCreateRequest;
-import com.example.chookjibupuser.api.review.dto.ReviewPageResponse;
-import com.example.chookjibupuser.api.review.dto.ReviewResponse;
+import com.example.chookjibupuser.api.review.dto.*;
 import com.example.chookjibupuser.festival.FestivalQueryService;
+import com.example.chookjibupuser.festival.dto.FestivalSummaryView;
 import com.example.chookjibupuser.global.response.CustomException;
 import com.example.chookjibupuser.global.response.ErrorCode;
 import com.example.chookjibupuser.review.FestivalReviewService;
+import com.example.chookjibupuser.review.dto.MyReviewEntryPageView;
+import com.example.chookjibupuser.review.dto.MyReviewEntryView;
 import com.example.chookjibupuser.review.dto.ReviewPageView;
 import com.example.chookjibupuser.review.dto.ReviewView;
 import com.example.chookjibupuser.user.UserQueryService;
@@ -16,15 +17,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * 축제 리뷰(별점+한줄평) 작성/조회 유스케이스를 처리하는 application 계층 조합
- * 서비스이다.
- *
- * <p>review 도메인({@link FestivalReviewService}), festival 도메인({@link FestivalQueryService}),
- * user 도메인({@link UserQueryService})은 서로의 존재를 모른다. QR코드/프론트 URL에 담긴
- * 축제의 public_id(UUID)를 review 도메인이 쓰는 내부 festival_id(Long)로 바꾸고, 작성자
- * userId를 표시용 닉네임으로 바꾸는 지점이 바로 여기다.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class UserReviewService {
@@ -33,11 +25,6 @@ public class UserReviewService {
     private final FestivalReviewService festivalReviewService;
     private final UserQueryService userQueryService;
 
-    /**
-     * @param userId 로그인한 사용자 ID. 비로그인이면 null — 이 경우 request.onsite()가
-     *               true여야만(현장 QR 리뷰) 통과한다. false인데 userId가 null이면
-     *               "로그인이 필요합니다" 에러를 던진다(일반 리뷰는 로그인 필수).
-     */
     public ReviewResponse createReview(UUID festivalPublicId, Long userId, ReviewCreateRequest request) {
         if (userId == null && !Boolean.TRUE.equals(request.onsite())) {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
@@ -74,5 +61,58 @@ public class UserReviewService {
                 pageView.totalElements(),
                 pageView.totalPages()
         );
+    }
+
+    /**
+     * 마이페이지 "내가 쓴 리뷰" 목록. 내가 쓴 리뷰(review 도메인)에 각 축제의 요약 정보
+     * (festival 도메인)를 합쳐서 돌려준다 — MyWishlistFestivalResponse를 만드는
+     * getMyWishlist와 같은 패턴이다.
+     */
+    public MyReviewPageResponse getMyReviews(Long userId, Integer page, Integer size) {
+        MyReviewEntryPageView entryPage = festivalReviewService.getMyReviews(userId, page, size);
+
+        List<Long> festivalIds = entryPage.items().stream()
+                .map(MyReviewEntryView::festivalId)
+                .distinct()
+                .toList();
+        Map<Long, FestivalSummaryView> festivalById = festivalQueryService.getFestivalsByIds(festivalIds);
+
+        List<MyReviewResponse> items = entryPage.items().stream()
+                .map(entry -> toMyReviewResponse(entry, festivalById))
+                .filter(response -> response != null)
+                .toList();
+
+        return new MyReviewPageResponse(
+                items,
+                entryPage.page(),
+                entryPage.size(),
+                entryPage.totalElements(),
+                entryPage.totalPages()
+        );
+    }
+
+    private MyReviewResponse toMyReviewResponse(
+            MyReviewEntryView entry,
+            Map<Long, FestivalSummaryView> festivalById
+    ) {
+        FestivalSummaryView festival = festivalById.get(entry.festivalId());
+        if (festival == null) {
+            // 리뷰를 쓴 뒤 축제 데이터가 파이프라인에서 지워진 것 같은 드문 경우 — 화면에서 조용히 제외한다.
+            return null;
+        }
+        return MyReviewResponse.of(entry, festival);
+    }
+
+    public ReviewResponse updateReview(Long userId, Long reviewId, ReviewUpdateRequest request) {
+        ReviewView view = festivalReviewService.updateReview(
+                userId, reviewId, request.rating(), request.content()
+        );
+        String reviewerName = userQueryService.getNicknames(List.of(userId)).get(userId);
+        return ReviewResponse.from(view, reviewerName);
+    }
+
+
+    public void deleteReview(Long userId, Long reviewId) {
+        festivalReviewService.deleteReview(userId, reviewId);
     }
 }

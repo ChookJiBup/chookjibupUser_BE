@@ -31,6 +31,7 @@ public enum ErrorCode {
     FESTIVAL_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "축제를 찾을 수 없습니다."),
     AUTH_EMAIL_VERIFICATION_NOT_FOUND(40403, HttpStatus.NOT_FOUND, "인증번호를 먼저 요청해주세요."),
     AUTH_PASSWORD_RESET_TOKEN_NOT_FOUND(40404, HttpStatus.NOT_FOUND, "유효하지 않은 링크입니다."),
+    REVIEW_NOT_FOUND(40405, HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."),
 
     AUTH_EMAIL_ALREADY_REGISTERED(40901, HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
 

@@ -78,4 +78,14 @@ public class FestivalReview {
         }
         return new FestivalReview(userId, festivalId, (short) rating, content, onsite);
     }
+    public void update(int rating, String content) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("rating은 1~5 사이여야 합니다.");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content는 필수입니다.");
+        }
+        this.rating = (short) rating;
+        this.content = content;
+    }
 }
