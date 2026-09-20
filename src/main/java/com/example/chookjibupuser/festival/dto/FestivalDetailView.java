@@ -2,6 +2,8 @@
 package com.example.chookjibupuser.festival.dto;
 
 import com.example.chookjibupuser.festival.Festival;
+import com.example.chookjibupuser.festival.FestivalCoordinate;
+import com.example.chookjibupuser.festival.FestivalCoordinateResolver;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -33,6 +35,20 @@ public record FestivalDetailView(
      *              서버 기본 시간대에 좌우되지 않도록 호출하는 쪽에서 넘겨준다.
      */
     public static FestivalDetailView of(Festival festival, LocalDate today) {
+        return of(
+                festival,
+                today,
+                new FestivalCoordinate(festival.getLatitude(), festival.getLongitude())
+        );
+    }
+
+    /**
+     * 좌표를 바깥에서 정해 넘기는 형태.
+     *
+     * 관리자 콘솔이 등록한 축제는 좌표가 `festivals`가 아니라 `festival_locations`에 있어,
+     * 엔티티만 보면 «좌표 없음»이 된다. 어디서 온 좌표인지는 {@link FestivalCoordinateResolver}가 정한다.
+     */
+    public static FestivalDetailView of(Festival festival, LocalDate today, FestivalCoordinate coordinate) {
         return new FestivalDetailView(
                 festival.getFestivalId(),
                 festival.getPublicId(),
@@ -48,8 +64,8 @@ public record FestivalDetailView(
                 festival.getContent(),
                 festival.getPhoneNumber(),
                 festival.getHomepageUrl(),
-                festival.getLatitude(),
-                festival.getLongitude(),
+                coordinate.latitude(),
+                coordinate.longitude(),
                 FestivalProgressStatus.from(today, festival.getStartDate(), festival.getEndDate()),
                 festival.getViewCount()
         );

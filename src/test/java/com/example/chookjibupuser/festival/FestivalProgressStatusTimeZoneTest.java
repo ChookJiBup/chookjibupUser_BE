@@ -2,6 +2,7 @@ package com.example.chookjibupuser.festival;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,8 +67,10 @@ class FestivalProgressStatusTimeZoneTest {
         FestivalRepository repository = mock(FestivalRepository.class);
         when(repository.findById(any())).thenReturn(Optional.of(festival));
         when(repository.findByFestivalIdIn(anyList())).thenReturn(List.of(festival));
+        // 이 테스트는 시간대만 본다. 좌표는 조회하지 않은 것으로 두고 축제 행 값을 그대로 쓰게 한다.
+        when(repository.findPrimaryCoordinates(anyCollection())).thenReturn(List.of());
         Clock clock = Clock.fixed(EARLY_MORNING_IN_KOREA, ZoneId.of("Asia/Seoul"));
-        return new FestivalQueryService(repository, clock);
+        return new FestivalQueryService(repository, new FestivalCoordinateResolver(repository), clock);
     }
 
     private Festival festivalRunning(LocalDate startDate, LocalDate endDate) {

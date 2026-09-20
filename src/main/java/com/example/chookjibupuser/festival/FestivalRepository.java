@@ -1,6 +1,7 @@
 package com.example.chookjibupuser.festival;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,30 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FestivalRepository extends JpaRepository<Festival, Long> {
+
+    /**
+     * 축제들의 대표 위치 좌표.
+     *
+     * <p>관리자 콘솔이 등록한 축제는 좌표를 `festival_locations`에 두고 `festivals`의
+     * latitude/longitude는 비워 둔다. 축제마다 한 번씩 물으면 목록 한 페이지에 쿼리가
+     * 수십 번 나가므로 한꺼번에 읽는다. 좌표가 한쪽만 채워진 행은 지도에 찍을 수 없어
+     * 애초에 빼고 가져온다.</p>
+     */
+    @Query(value = """
+            SELECT fl.festival_id AS "festivalId",
+                   fl.location_id AS "locationId",
+                   fl.latitude    AS "latitude",
+                   fl.longitude   AS "longitude"
+              FROM festival_locations fl
+             WHERE fl.festival_id IN (:festivalIds)
+               AND fl.is_primary = TRUE
+               AND fl.latitude IS NOT NULL
+               AND fl.longitude IS NOT NULL
+            """, nativeQuery = true)
+    List<FestivalPrimaryCoordinateRow> findPrimaryCoordinates(
+            @Param("festivalIds") Collection<Long> festivalIds
+    );
+
 
     Page<Festival> findByFestivalNameContainingIgnoreCaseOrderByStartDateAscFestivalIdAsc(
             String name, Pageable pageable

@@ -28,6 +28,8 @@ public class FestivalQueryService {
     private static final int MAX_SIZE = 100;
 
     private final FestivalRepository festivalRepository;
+    /** 좌표가 `festivals`와 `festival_locations` 두 곳에 나뉘어 있어 어느 쪽을 쓸지 정해 준다. */
+    private final FestivalCoordinateResolver coordinateResolver;
     /** 서비스 기준 시간대(Asia/Seoul) 시계. 진행 상태 계산의 "오늘"을 여기서만 얻는다. */
     private final Clock clock;
 
@@ -78,10 +80,17 @@ public class FestivalQueryService {
             );
         }
 
+        // 페이지 안의 축제 좌표를 한 번에 읽는다. 축제마다 따로 물으면 쿼리가 페이지 크기만큼 늘어난다.
+        Map<Long, FestivalCoordinate> coordinates = coordinateResolver.resolve(result.getContent());
+
         return new FestivalPageView(
                 result.getContent()
                         .stream()
-                        .map(festival -> FestivalSummaryView.of(festival, today))
+                        .map(festival -> FestivalSummaryView.of(
+                                festival,
+                                today,
+                                coordinates.getOrDefault(festival.getFestivalId(), FestivalCoordinate.NONE)
+                        ))
                         .toList(),
                 result.getNumber(),
                 result.getSize(),
@@ -118,7 +127,7 @@ public class FestivalQueryService {
     public FestivalDetailView getFestival(Long festivalId) {
         Festival festival = festivalRepository.findById(festivalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FESTIVAL_NOT_FOUND));
-        return FestivalDetailView.of(festival, today());
+        return FestivalDetailView.of(festival, today(), coordinateResolver.resolve(festival));
     }
 
     @Transactional
@@ -136,8 +145,16 @@ public class FestivalQueryService {
             return result;
         }
         LocalDate today = today();
-        festivalRepository.findByFestivalIdIn(festivalIds)
-                .forEach(festival -> result.put(festival.getFestivalId(), FestivalSummaryView.of(festival, today)));
+        List<Festival> festivals = festivalRepository.findByFestivalIdIn(festivalIds);
+        Map<Long, FestivalCoordinate> coordinates = coordinateResolver.resolve(festivals);
+        festivals.forEach(festival -> result.put(
+                festival.getFestivalId(),
+                FestivalSummaryView.of(
+                        festival,
+                        today,
+                        coordinates.getOrDefault(festival.getFestivalId(), FestivalCoordinate.NONE)
+                )
+        ));
         return result;
     }
 
