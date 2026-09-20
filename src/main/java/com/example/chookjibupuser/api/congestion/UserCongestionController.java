@@ -26,9 +26,12 @@ public class UserCongestionController {
 
     private final UserCongestionService userCongestionService;
 
-    @Operation(summary = "축제 혼잡도 조회", description = "부스별 최신 혼잡도와 대기시간 랭킹을 보여줍니다. "
+    @Operation(summary = "축제 혼잡도 조회", description = "부스별 최신 혼잡도와 대기시간 랭킹, "
+            + "축제 전체를 대표하는 혼잡도 등급(congestionLevel = 부스 등급 중 최고값)을 보여줍니다. "
             + "경로의 festivalPublicId는 목록/상세 조회 응답의 publicId 값입니다. "
-            + "부스에 대해 아직 혼잡도가 한 번도 갱신 안 됐으면 해당 필드는 null입니다.")
+            + "부스에 대해 아직 혼잡도가 한 번도 갱신 안 됐으면 해당 필드는 null입니다. "
+            + "각 부스에는 배치도 노드 식별자(roadmapNodePublicId)와 구역(zoneId/zoneName)이 붙습니다 "
+            + "— 지도에 없거나 구역으로 묶이지 않은 부스는 null입니다.")
     @GetMapping
     public ApiResponse<FestivalCongestionResponse> getCongestion(@PathVariable UUID festivalPublicId) {
         return ApiResponse.success(

@@ -1,6 +1,7 @@
 // roadmap/RoadmapQueryService.java
 package com.example.chookjibupuser.roadmap;
 
+import com.example.chookjibupuser.roadmap.dto.BoothZoneView;
 import com.example.chookjibupuser.roadmap.dto.NodeView;
 import com.example.chookjibupuser.roadmap.dto.PresentationView;
 import com.example.chookjibupuser.roadmap.dto.RoadmapView;
@@ -9,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,6 +97,49 @@ public class RoadmapQueryService {
                 otherNodes,
                 resolvePresentation(currentMap)
         );
+    }
+
+    /**
+     * 부스들이 배치도에서 어느 구역에 묶여 있는지 찾아 준다.
+     *
+     * <p>혼잡도 화면이 「구역」으로 부스를 걸러내려고 쓴다. 한동안은 프런트가 축제 상세를
+     * 따로 불러 «부스 이름»으로 구역을 맞춰 붙였는데, 같은 이름으로 등록된 부스가 없다는
+     * 보장이 없고 이름을 한 글자만 다르게 적어도 구역이 안 붙었다. 여기서는
+     * {@code booth_info.roadmap_node_id -> roadmap_node.public_id -> zones[].boothNodeIds}
+     * 라는 실제 관계로 잇는다.</p>
+     *
+     * <p>{@link #getRoadmap}과 달리 로드맵 공개 상태({@code PUBLISHED})를 보지 않는다.
+     * 여기서 나가는 건 「이미 혼잡도 API로 공개되고 있는 부스」에 붙일 구역 이름표뿐이고,
+     * 배치도가 아직 공개 전이라는 이유로 구역 필터만 사라지면 같은 축제인데 화면마다
+     * 부스를 묶는 기준이 달라진다. 도형·지도 이미지 같은 검토 중인 배치 자체는 여전히
+     * {@code getRoadmap}의 게이트에 막혀 나가지 않는다.</p>
+     *
+     * @param nodeIds {@code booth_info.roadmap_node_id} 모음. null이 섞여 있어도 된다.
+     * @return nodeId -> 그 노드의 구역 정보. 지도에 없는 노드 id는 결과에서 빠진다.
+     */
+    public Map<Long, BoothZoneView> getBoothZones(Long festivalId, Collection<Long> nodeIds) {
+        List<Long> presentIds = nodeIds.stream().filter(java.util.Objects::nonNull).distinct().toList();
+        if (presentIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<UUID, RoadmapZone> zoneByBoothNode = new HashMap<>();
+        festivalRoadmapRepository.findByFestivalId(festivalId).ifPresent(roadmap ->
+                roadmap.getZones().forEach(zone ->
+                        // 한 부스가 두 구역에 들어간 데이터가 있어도 터지지 않게 먼저 온 구역을 쓴다.
+                        zone.boothNodeIds().forEach(nodeId -> zoneByBoothNode.putIfAbsent(nodeId, zone))));
+
+        Map<Long, BoothZoneView> result = new HashMap<>();
+        for (RoadmapNode node : roadmapNodeRepository.findAllById(presentIds)) {
+            RoadmapZone zone = zoneByBoothNode.get(node.getPublicId());
+            result.put(node.getId(), new BoothZoneView(
+                    node.getId(),
+                    node.getPublicId(),
+                    zone == null ? null : zone.zoneId(),
+                    zone == null ? null : zone.name()
+            ));
+        }
+        return result;
     }
 
     /**
