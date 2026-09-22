@@ -257,4 +257,12 @@ public class RoadmapQueryService {
         }
         return mapImageProperties.imageBaseUrl().replaceAll("/+$", "") + "/" + objectKey;
     }
+
+    public Map<Long, UUID> getPublicIdsByNodeIds(List<Long> nodeIds) {
+        if (nodeIds.isEmpty()) {
+            return Map.of();
+        }
+        return roadmapNodeRepository.findByIdIn(nodeIds).stream()
+                .collect(java.util.stream.Collectors.toMap(RoadmapNode::getId, RoadmapNode::getPublicId));
+    }
 }
